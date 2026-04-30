@@ -4,7 +4,7 @@
 #include <cmath>
 #include <cctype>
 #include <stdexcept>
-
+#include <limits>
 namespace datastruct
 {
     iofmtguard::iofmtguard(std::basic_ios<char>& s) :
