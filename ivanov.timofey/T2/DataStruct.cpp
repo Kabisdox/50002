@@ -198,8 +198,9 @@ namespace datastruct
 
         DataStruct temp{};
         bool f1 = false, f2 = false, f3 = false;
+        bool parseError = false;
 
-        while (!(f1 && f2 && f3))
+        while (!(f1 && f2 && f3) && !parseError)
         {
             in >> std::ws;
 
@@ -216,56 +217,46 @@ namespace datastruct
             std::string key;
             if (!(in >> key))
             {
+                parseError = true;
                 break;
             }
-
-            in >> std::ws;
 
             if (key == "key1" && !f1)
             {
                 if (in >> UllLitIO{ temp.key1 })
-                {
                     f1 = true;
-                }
                 else
-                {
-                    break;
-                }
+                    parseError = true;
             }
             else if (key == "key2" && !f2)
             {
                 if (in >> CmpLspIO{ temp.key2 })
-                {
                     f2 = true;
-                }
                 else
-                {
-                    break;
-                }
+                    parseError = true;
             }
             else if (key == "key3" && !f3)
             {
                 if (in >> StringIO{ temp.key3 })
-                {
                     f3 = true;
-                }
                 else
-                {
-                    break;
-                }
+                    parseError = true;
             }
             else
             {
                 std::string dummy;
-                in >> dummy;
-                if (!in) break;
+                if (!(in >> dummy))
+                {
+                    parseError = true;
+                    break;
+                }
             }
         }
 
         in.clear();
         in.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
 
-        if (f1 && f2 && f3)
+        if (f1 && f2 && f3 && !parseError)
         {
             dest = temp;
             in.clear();
