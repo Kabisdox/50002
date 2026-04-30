@@ -188,8 +188,20 @@ namespace datastruct
             return in;
         }
 
+        in >> std::ws;
+
+        if (in.peek() != '(')
+        {
+            in.setstate(std::ios::failbit);
+            in.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+            return in;
+        }
+
         if (!(in >> DelimiterIO{ '(' } >> DelimiterIO{ ':' }))
         {
+            in.clear();
+            in.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+            in.setstate(std::ios::failbit);
             return in;
         }
 
@@ -198,12 +210,11 @@ namespace datastruct
 
         for (int attempt = 0; attempt < 6; ++attempt)
         {
-            if (f1 && f2 && f3)
-            {
-                break;
-            }
+            if (f1 && f2 && f3) break;
 
-            while (in >> std::ws && in.peek() == ':')
+            in >> std::ws;
+
+            if (in.peek() == ':')
             {
                 in.get();
                 if (in.peek() == ')')
@@ -211,87 +222,51 @@ namespace datastruct
                     in.get();
                     break;
                 }
-            }
-
-            if (in.peek() == ')')
-            {
-                break;
+                in.putback(':');
             }
 
             std::string key;
-            if (!(in >> key))
-            {
-                break;
-            }
+            if (!(in >> key)) break;
 
             char space;
             in.get(space);
             if (space != ' ')
             {
-                in.setstate(std::ios::failbit);
                 break;
             }
 
-            if (std::isspace(in.peek()))
-            {
-                in.setstate(std::ios::failbit);
-                break;
-            }
+            if (std::isspace(in.peek())) break;
 
             if (key == "key1" && !f1)
             {
-                if (!(in >> UllLitIO{ temp.key1 }))
-                {
-                    break;
-                }
+                if (!(in >> UllLitIO{ temp.key1 })) break;
                 f1 = true;
             }
             else if (key == "key2" && !f2)
             {
-                if (!(in >> CmpLspIO{ temp.key2 }))
-                {
-                    break;
-                }
+                if (!(in >> CmpLspIO{ temp.key2 })) break;
                 f2 = true;
             }
             else if (key == "key3" && !f3)
             {
-                if (!(in >> StringIO{ temp.key3 }))
-                {
-                    break;
-                }
+                if (!(in >> StringIO{ temp.key3 })) break;
                 f3 = true;
             }
             else
             {
                 std::string dummy;
-                if (!(in >> dummy))
-                {
-                    break;
-                }
+                if (!(in >> dummy)) break;
                 continue;
             }
-
-            if (std::isspace(in.peek()))
-            {
-                in.setstate(std::ios::failbit);
-                break;
-            }
-
-            if (!(in >> DelimiterIO{ ':' }) && !f1 && !f2 && !f3)
-            {
-                break;
-            }
         }
+
+        in.clear();
+        in.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
 
         if (f1 && f2 && f3)
         {
             dest = temp;
             in.clear();
-            while (in && in.peek() != '\n' && in.peek() != EOF)
-            {
-                in.get();
-            }
         }
         else
         {
@@ -312,7 +287,8 @@ namespace datastruct
         iofmtguard fmtguard(out);
 
         out << "(:key1 " << src.key1 << "ull";
-        out << ":key2 #c(" << src.key2.real() << " " << src.key2.imag() << ")";
+        out << ":key2 #c(" << std::fixed << std::setprecision(1)
+            << src.key2.real() << " " << src.key2.imag() << ")";
         out << ":key3 \"" << src.key3 << "\":)";
 
         return out;
