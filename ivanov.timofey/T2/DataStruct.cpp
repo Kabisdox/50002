@@ -183,21 +183,12 @@ namespace datastruct
     std::istream& operator>>(std::istream& in, DataStruct& dest)
     {
         std::istream::sentry sentry(in);
-        if (!sentry)
-        {
-            return in;
-        }
+        if (!sentry) return in;
 
         in >> std::ws;
 
-        if (in.peek() != '(')
-        {
-            in.setstate(std::ios::failbit);
-            in.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
-            return in;
-        }
-
-        if (!(in >> DelimiterIO{ '(' } >> DelimiterIO{ ':' }))
+        char c1, c2;
+        if (!in.get(c1) || c1 != '(' || !in.get(c2) || c2 != ':')
         {
             in.clear();
             in.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
@@ -208,10 +199,8 @@ namespace datastruct
         DataStruct temp{};
         bool f1 = false, f2 = false, f3 = false;
 
-        for (int attempt = 0; attempt < 6; ++attempt)
+        while (!(f1 && f2 && f3))
         {
-            if (f1 && f2 && f3) break;
-
             in >> std::ws;
 
             if (in.peek() == ':')
@@ -222,41 +211,54 @@ namespace datastruct
                     in.get();
                     break;
                 }
-                in.putback(':');
             }
 
             std::string key;
-            if (!(in >> key)) break;
-
-            char space;
-            in.get(space);
-            if (space != ' ')
+            if (!(in >> key))
             {
                 break;
             }
 
-            if (std::isspace(in.peek())) break;
+            in >> std::ws;
 
             if (key == "key1" && !f1)
             {
-                if (!(in >> UllLitIO{ temp.key1 })) break;
-                f1 = true;
+                if (in >> UllLitIO{ temp.key1 })
+                {
+                    f1 = true;
+                }
+                else
+                {
+                    break;
+                }
             }
             else if (key == "key2" && !f2)
             {
-                if (!(in >> CmpLspIO{ temp.key2 })) break;
-                f2 = true;
+                if (in >> CmpLspIO{ temp.key2 })
+                {
+                    f2 = true;
+                }
+                else
+                {
+                    break;
+                }
             }
             else if (key == "key3" && !f3)
             {
-                if (!(in >> StringIO{ temp.key3 })) break;
-                f3 = true;
+                if (in >> StringIO{ temp.key3 })
+                {
+                    f3 = true;
+                }
+                else
+                {
+                    break;
+                }
             }
             else
             {
                 std::string dummy;
-                if (!(in >> dummy)) break;
-                continue;
+                in >> dummy;
+                if (!in) break;
             }
         }
 
