@@ -1,7 +1,9 @@
 #include <algorithm>
 #include <cctype>
+#include <iomanip>
 #include <iostream>
 #include <iterator>
+#include <limits>
 #include <string>
 #include <vector>
 
@@ -9,296 +11,430 @@ struct DataStruct
 {
     unsigned long long key1;
     unsigned long long key2;
-    std::string key2Text;
     std::string key3;
 };
 
-void skipSpaces(const std::string& s, std::size_t& pos)
+class FmtGuard
 {
-    while (pos < s.size() &&
-        std::isspace(static_cast<unsigned char>(s[pos])))
+public:
+    explicit FmtGuard(std::basic_ios<char>& stream) :
+        stream_(stream),
+        precision_(stream.precision()),
+        flags_(stream.flags()),
+        fill_(stream.fill())
     {
-        ++pos;
     }
-}
 
-bool parseULLLit(const std::string& token, unsigned long long& value)
+    ~FmtGuard()
+    {
+        stream_.precision(precision_);
+        stream_.flags(flags_);
+        stream_.fill(fill_);
+    }
+
+private:
+    std::basic_ios<char>& stream_;
+    std::streamsize precision_;
+    std::basic_ios<char>::fmtflags flags_;
+    char fill_;
+};
+
+namespace details
 {
-    if (token.size() < 4)
+    void setFail(std::istream& input)
     {
+        input.setstate(std::ios::failbit);
+    }
+
+    bool readChar(std::istream& input, char expected)
+    {
+        char c = 0;
+        if (!input.get(c) || c != expected)
+        {
+            setFail(input);
+            return false;
+        }
+        return true;
+    }
+
+    bool readFieldName(std::istream& input, std::string& fieldName)
+    {
+        fieldName.clear();
+
+        char c = 0;
+        while (input.get(c))
+        {
+            if (c == ' ')
+            {
+                if (fieldName.empty())
+                {
+                    setFail(input);
+                    return false;
+                }
+                return true;
+            }
+
+            const unsigned char uc = static_cast<unsigned char>(c);
+            if (c == ':' || c == '(' || c == ')' || std::isspace(uc))
+            {
+                setFail(input);
+                return false;
+            }
+
+            fieldName += c;
+        }
+
+        setFail(input);
         return false;
     }
 
-    std::string suffix = token.substr(token.size() - 3);
-    if (suffix != "ull" && suffix != "ULL")
+    bool appendDecimalDigit(unsigned long long& value, int digit)
     {
-        return false;
-    }
-
-    std::string number = token.substr(0, token.size() - 3);
-    if (number.empty())
-    {
-        return false;
-    }
-
-    for (std::size_t i = 0; i < number.size(); ++i)
-    {
-        if (!std::isdigit(static_cast<unsigned char>(number[i])))
+        const unsigned long long max = std::numeric_limits<unsigned long long>::max();
+        if (value > (max - static_cast<unsigned long long>(digit)) / 10ULL)
         {
             return false;
         }
+        value = value * 10ULL + static_cast<unsigned long long>(digit);
+        return true;
     }
 
-    try
+    bool appendBinaryDigit(unsigned long long& value, int digit)
     {
-        std::size_t used = 0;
-        value = std::stoull(number, &used, 10);
-        return used == number.size();
-    }
-    catch (...)
-    {
-        return false;
-    }
-}
-
-bool parseULLBin(const std::string& token, unsigned long long& value)
-{
-    if (token.size() < 3)
-    {
-        return false;
-    }
-
-    if (!(token[0] == '0' && (token[1] == 'b' || token[1] == 'B')))
-    {
-        return false;
-    }
-
-    std::string bits = token.substr(2);
-    if (bits.empty())
-    {
-        return false;
-    }
-
-    for (std::size_t i = 0; i < bits.size(); ++i)
-    {
-        if (bits[i] != '0' && bits[i] != '1')
+        const unsigned long long max = std::numeric_limits<unsigned long long>::max();
+        if (value > (max - static_cast<unsigned long long>(digit)) / 2ULL)
         {
             return false;
         }
+        value = value * 2ULL + static_cast<unsigned long long>(digit);
+        return true;
     }
 
-    try
+    bool readUllLiteral(std::istream& input, unsigned long long& value)
     {
-        std::size_t used = 0;
-        value = std::stoull(bits, &used, 2);
-        return used == bits.size();
+        value = 0;
+
+        char c = 0;
+        if (!input.get(c) || !std::isdigit(static_cast<unsigned char>(c)))
+        {
+            setFail(input);
+            return false;
+        }
+
+        while (std::isdigit(static_cast<unsigned char>(c)))
+        {
+            const int digit = c - '0';
+
+            if (!appendDecimalDigit(value, digit))
+            {
+                setFail(input);
+                return false;
+            }
+
+            if (!input.get(c))
+            {
+                setFail(input);
+                return false;
+            }
+        }
+
+        char second = 0;
+        char third = 0;
+        if (!input.get(second) || !input.get(third))
+        {
+            setFail(input);
+            return false;
+        }
+
+        const std::string suffix{ c, second, third };
+        if (suffix != "ull" && suffix != "ULL")
+        {
+            setFail(input);
+            return false;
+        }
+
+        return true;
     }
-    catch (...)
+
+    bool readUllBinary(std::istream& input, unsigned long long& value)
     {
-        return false;
-    }
-}
+        value = 0;
 
-bool parseLine(const std::string& line, DataStruct& data)
-{
-    std::size_t pos = 0;
-    skipSpaces(line, pos);
-
-    if (pos >= line.size() || line[pos] != '(')
-    {
-        return false;
-    }
-    ++pos;
-
-    bool hasKey1 = false;
-    bool hasKey2 = false;
-    bool hasKey3 = false;
-
-    for (int i = 0; i < 3; ++i)
-    {
-        if (pos >= line.size() || line[pos] != ':')
+        if (!readChar(input, '0'))
         {
             return false;
         }
-        ++pos;
 
-        if (line.compare(pos, 4, "key1") == 0)
+        char b = 0;
+        if (!input.get(b) || (b != 'b' && b != 'B'))
         {
-            if (hasKey1)
-            {
-                return false;
-            }
-            pos += 4;
-
-            if (pos >= line.size() || line[pos] != ' ')
-            {
-                return false;
-            }
-            ++pos;
-
-            std::size_t start = pos;
-            while (pos < line.size() && line[pos] != ':')
-            {
-                ++pos;
-            }
-
-            if (pos == start || pos >= line.size())
-            {
-                return false;
-            }
-
-            std::string token = line.substr(start, pos - start);
-            if (!parseULLLit(token, data.key1))
-            {
-                return false;
-            }
-
-            hasKey1 = true;
+            setFail(input);
+            return false;
         }
-        else if (line.compare(pos, 4, "key2") == 0)
+
+        bool hasDigit = false;
+        while (input)
         {
-            if (hasKey2)
+            const int next = input.peek();
+            if (next != '0' && next != '1')
             {
+                break;
+            }
+
+            char digitChar = 0;
+            input.get(digitChar);
+            const int digit = digitChar - '0';
+            if (!appendBinaryDigit(value, digit))
+            {
+                setFail(input);
                 return false;
             }
-            pos += 4;
-
-            if (pos >= line.size() || line[pos] != ' ')
-            {
-                return false;
-            }
-            ++pos;
-
-            std::size_t start = pos;
-            while (pos < line.size() && line[pos] != ':')
-            {
-                ++pos;
-            }
-
-            if (pos == start || pos >= line.size())
-            {
-                return false;
-            }
-
-            std::string token = line.substr(start, pos - start);
-            if (!parseULLBin(token, data.key2))
-            {
-                return false;
-            }
-
-            data.key2Text = token.substr(2);
-            hasKey2 = true;
+            hasDigit = true;
         }
-        else if (line.compare(pos, 4, "key3") == 0)
+
+        if (!hasDigit)
         {
-            if (hasKey3)
-            {
-                return false;
-            }
-            pos += 4;
-
-            if (pos >= line.size() || line[pos] != ' ')
-            {
-                return false;
-            }
-            ++pos;
-
-            if (pos >= line.size() || line[pos] != '"')
-            {
-                return false;
-            }
-            ++pos;
-
-            std::size_t start = pos;
-            while (pos < line.size() && line[pos] != '"')
-            {
-                ++pos;
-            }
-
-            if (pos >= line.size())
-            {
-                return false;
-            }
-
-            data.key3 = line.substr(start, pos - start);
-            ++pos;
-
-            if (pos >= line.size() || line[pos] != ':')
-            {
-                return false;
-            }
-
-            hasKey3 = true;
+            setFail(input);
+            return false;
         }
-        else
+
+        return true;
+    }
+
+    bool readQuotedString(std::istream& input, std::string& value)
+    {
+        if (!readChar(input, '"'))
         {
             return false;
         }
-    }
 
-    if (pos >= line.size() || line[pos] != ':')
-    {
+        std::string result;
+        char c = 0;
+        while (input.get(c))
+        {
+            if (c == '\\')
+            {
+                char escaped = 0;
+                if (!input.get(escaped))
+                {
+                    setFail(input);
+                    return false;
+                }
+                result += escaped;
+            }
+            else if (c == '"')
+            {
+                value = result;
+                return true;
+            }
+            else
+            {
+                result += c;
+            }
+        }
+
+        setFail(input);
         return false;
     }
-    ++pos;
 
-    if (pos >= line.size() || line[pos] != ')')
+    bool readLineEnd(std::istream& input)
     {
-        return false;
+        while (input)
+        {
+            const int next = input.peek();
+            if (next == std::char_traits<char>::eof())
+            {
+                return true;
+            }
+
+            if (next == '\n')
+            {
+                input.get();
+                return true;
+            }
+
+            if (next == '\r')
+            {
+                input.get();
+                if (input.peek() == '\n')
+                {
+                    input.get();
+                }
+                return true;
+            }
+
+            if (next == ' ' || next == '\t')
+            {
+                input.get();
+                continue;
+            }
+
+            setFail(input);
+            return false;
+        }
+
+        return true;
     }
-    ++pos;
 
-    skipSpaces(line, pos);
+    bool readDataStruct(std::istream& input, DataStruct& data)
+    {
+        DataStruct temp{ 0ULL, 0ULL, "" };
+        bool hasKey1 = false;
+        bool hasKey2 = false;
+        bool hasKey3 = false;
 
-    return pos == line.size() && hasKey1 && hasKey2 && hasKey3;
+        if (!readChar(input, '('))
+        {
+            return false;
+        }
+
+        for (int i = 0; i < 3; ++i)
+        {
+            if (!readChar(input, ':'))
+            {
+                return false;
+            }
+
+            std::string fieldName;
+            if (!readFieldName(input, fieldName))
+            {
+                return false;
+            }
+
+            if (fieldName == "key1" && !hasKey1)
+            {
+                if (!readUllLiteral(input, temp.key1))
+                {
+                    return false;
+                }
+                hasKey1 = true;
+            }
+            else if (fieldName == "key2" && !hasKey2)
+            {
+                if (!readUllBinary(input, temp.key2))
+                {
+                    return false;
+                }
+                hasKey2 = true;
+            }
+            else if (fieldName == "key3" && !hasKey3)
+            {
+                if (!readQuotedString(input, temp.key3))
+                {
+                    return false;
+                }
+                hasKey3 = true;
+            }
+            else
+            {
+                setFail(input);
+                return false;
+            }
+        }
+
+        if (!readChar(input, ':') || !readChar(input, ')'))
+        {
+            return false;
+        }
+
+        if (!(hasKey1 && hasKey2 && hasKey3))
+        {
+            setFail(input);
+            return false;
+        }
+
+        if (!readLineEnd(input))
+        {
+            return false;
+        }
+
+        data = temp;
+        return true;
+    }
+
+    std::string toBinary(unsigned long long value)
+    {
+        if (value == 0ULL)
+        {
+            return "0";
+        }
+
+        std::string result;
+        while (value != 0ULL)
+        {
+            result += static_cast<char>('0' + (value % 2ULL));
+            value /= 2ULL;
+        }
+
+        std::reverse(result.begin(), result.end());
+        return result;
+    }
 }
 
-std::istream& operator>>(std::istream& in, DataStruct& data)
+std::istream& operator>>(std::istream& input, DataStruct& data)
 {
-    std::string line;
-
-    while (std::getline(in, line))
+    std::istream::sentry sentry(input);
+    if (!sentry)
     {
-        DataStruct temp;
-        if (parseLine(line, temp))
+        return input;
+    }
+
+    while (input)
+    {
+        DataStruct temp{ 0ULL, 0ULL, "" };
+        if (details::readDataStruct(input, temp))
         {
             data = temp;
-            return in;
+            return input;
         }
+
+        if (input.eof() || input.bad())
+        {
+            return input;
+        }
+
+        input.clear();
+        input.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+        input >> std::ws;
     }
 
-    in.setstate(std::ios::failbit);
-    return in;
+    return input;
 }
 
-std::ostream& operator<<(std::ostream& out, const DataStruct& data)
+std::ostream& operator<<(std::ostream& output, const DataStruct& data)
 {
-    out << "(:key1 " << data.key1 << "ull";
-    out << ":key2 0b" << data.key2Text;
-    out << ":key3 \"" << data.key3 << "\":)";
-    return out;
+    std::ostream::sentry sentry(output);
+    if (sentry)
+    {
+        FmtGuard guard(output);
+        output << "(:key1 " << std::dec << data.key1 << "ull"
+            << ":key2 0b" << details::toBinary(data.key2)
+            << ":key3 " << std::quoted(data.key3)
+            << ":)";
+    }
+    return output;
 }
 
-bool compareData(const DataStruct& a, const DataStruct& b)
+bool compareData(const DataStruct& left, const DataStruct& right)
 {
-    if (a.key1 != b.key1)
+    if (left.key1 != right.key1)
     {
-        return a.key1 < b.key1;
+        return left.key1 < right.key1;
     }
-    if (a.key2 != b.key2)
+    if (left.key2 != right.key2)
     {
-        return a.key2 < b.key2;
+        return left.key2 < right.key2;
     }
-    return a.key3.size() < b.key3.size();
+    return left.key3.size() < right.key3.size();
 }
 
 int main()
 {
-    std::vector< DataStruct > data;
+    std::vector<DataStruct> data;
 
     std::copy(
-        std::istream_iterator< DataStruct >(std::cin),
-        std::istream_iterator< DataStruct >(),
+        std::istream_iterator<DataStruct>(std::cin),
+        std::istream_iterator<DataStruct>(),
         std::back_inserter(data)
     );
 
@@ -307,7 +443,7 @@ int main()
     std::copy(
         data.begin(),
         data.end(),
-        std::ostream_iterator< DataStruct >(std::cout, "\n")
+        std::ostream_iterator<DataStruct>(std::cout, "\n")
     );
 
     return 0;
