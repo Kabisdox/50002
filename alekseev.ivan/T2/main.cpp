@@ -11,6 +11,7 @@ struct DataStruct
 {
     unsigned long long key1;
     unsigned long long key2;
+    std::string key2Text;
     std::string key3;
 };
 
@@ -90,7 +91,8 @@ namespace details
 
     bool appendDecimalDigit(unsigned long long& value, int digit)
     {
-        const unsigned long long max = std::numeric_limits<unsigned long long>::max();
+        const unsigned long long max =
+            std::numeric_limits<unsigned long long>::max();
         if (value > (max - static_cast<unsigned long long>(digit)) / 10ULL)
         {
             return false;
@@ -101,7 +103,8 @@ namespace details
 
     bool appendBinaryDigit(unsigned long long& value, int digit)
     {
-        const unsigned long long max = std::numeric_limits<unsigned long long>::max();
+        const unsigned long long max =
+            std::numeric_limits<unsigned long long>::max();
         if (value > (max - static_cast<unsigned long long>(digit)) / 2ULL)
         {
             return false;
@@ -156,9 +159,13 @@ namespace details
         return true;
     }
 
-    bool readUllBinary(std::istream& input, unsigned long long& value)
+    bool readUllBinary(
+        std::istream& input,
+        unsigned long long& value,
+        std::string& text)
     {
         value = 0;
+        text.clear();
 
         if (!readChar(input, '0'))
         {
@@ -183,12 +190,15 @@ namespace details
 
             char digitChar = 0;
             input.get(digitChar);
+            text += digitChar;
+
             const int digit = digitChar - '0';
             if (!appendBinaryDigit(value, digit))
             {
                 setFail(input);
                 return false;
             }
+
             hasDigit = true;
         }
 
@@ -278,7 +288,7 @@ namespace details
 
     bool readDataStruct(std::istream& input, DataStruct& data)
     {
-        DataStruct temp{ 0ULL, 0ULL, "" };
+        DataStruct temp{ 0ULL, 0ULL, "", "" };
         bool hasKey1 = false;
         bool hasKey2 = false;
         bool hasKey3 = false;
@@ -311,7 +321,7 @@ namespace details
             }
             else if (fieldName == "key2" && !hasKey2)
             {
-                if (!readUllBinary(input, temp.key2))
+                if (!readUllBinary(input, temp.key2, temp.key2Text))
                 {
                     return false;
                 }
@@ -351,24 +361,6 @@ namespace details
         data = temp;
         return true;
     }
-
-    std::string toBinary(unsigned long long value)
-    {
-        if (value == 0ULL)
-        {
-            return "0";
-        }
-
-        std::string result;
-        while (value != 0ULL)
-        {
-            result += static_cast<char>('0' + (value % 2ULL));
-            value /= 2ULL;
-        }
-
-        std::reverse(result.begin(), result.end());
-        return result;
-    }
 }
 
 std::istream& operator>>(std::istream& input, DataStruct& data)
@@ -381,7 +373,7 @@ std::istream& operator>>(std::istream& input, DataStruct& data)
 
     while (input)
     {
-        DataStruct temp{ 0ULL, 0ULL, "" };
+        DataStruct temp{ 0ULL, 0ULL, "", "" };
         if (details::readDataStruct(input, temp))
         {
             data = temp;
@@ -408,7 +400,7 @@ std::ostream& operator<<(std::ostream& output, const DataStruct& data)
     {
         FmtGuard guard(output);
         output << "(:key1 " << std::dec << data.key1 << "ull"
-            << ":key2 0b" << details::toBinary(data.key2)
+            << ":key2 0b" << data.key2Text
             << ":key3 " << std::quoted(data.key3)
             << ":)";
     }
