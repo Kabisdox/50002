@@ -1,4 +1,7 @@
 #include <iostream>
+#include <algorithm>
+#include <iterator>
+
 #include "Polygon.h"
 #include "Structs.h"
 
@@ -121,13 +124,14 @@ bool segmentsIntersect(const Point& a, const Point& b, const Point& c, const Poi
     const long long cd_a = cross(c, d, a);
     const long long cd_b = cross(c, d, b);
 
-    return
-        onSegment(c, a, b) ||
-        onSegment(d, a, b) ||
-        onSegment(a, c, d) ||
-        onSegment(b, c, d) ||
-        ((ab_c > 0 && ab_d < 0 || ab_c < 0 && ab_d > 0) &&
-         (cd_a > 0 && cd_b < 0 || cd_a < 0 && cd_b > 0));
+    const bool differentSides1 = ((ab_c > 0) && (ab_d < 0)) || ((ab_c < 0) && (ab_d > 0));
+    const bool differentSides2 = ((cd_a > 0) && (cd_b < 0)) || ((cd_a < 0) && (cd_b > 0));
+
+    return onSegment(c, a, b)
+        || onSegment(d, a, b)
+        || onSegment(a, c, d)
+        || onSegment(b, c, d)
+        || (differentSides1 && differentSides2);
 }
 
 bool polygonsIntersect(const Polygon& lhs, const Polygon& rhs) {

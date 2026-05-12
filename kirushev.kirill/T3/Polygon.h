@@ -2,6 +2,7 @@
 #define POLYGON_H
 
 #include <vector>
+#include <iosfwd>
 
 struct Point {
     int x;

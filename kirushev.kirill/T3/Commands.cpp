@@ -1,6 +1,7 @@
 #include <iomanip>
 #include <numeric>
 #include <algorithm>
+#include <functional>
 
 #include "Polygon.h"
 #include "Commands.h"
