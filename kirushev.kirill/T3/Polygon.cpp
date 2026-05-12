@@ -1,6 +1,7 @@
 #include <iostream>
 #include <algorithm>
 #include <iterator>
+#include <numeric>
 
 #include "Polygon.h"
 #include "Structs.h"
@@ -26,11 +27,6 @@ std::ostream& operator<<(std::ostream& os, const Point& point) {
 
     os << "(" << point.x << ";" << point.y << ")";
     return os;
-}
-
-const Point& getNextPoint(const Polygon& polygon, const Point& point) {
-    const auto index = &point - polygon.points.data();
-    return polygon.points[(index + 1) % polygon.points.size()];
 }
 
 // Polygon
@@ -107,6 +103,52 @@ void printPolygons(const std::vector<Polygon>& polygons) {
     );
 }
 
+std::vector<std::size_t> getIndexes(const std::size_t size) {
+    std::vector<std::size_t> indexes(size);
+    std::iota(indexes.begin(), indexes.end(), 0);
+    return indexes;
+}
+
+bool pointInPolygon(const Point& point, const Polygon& polygon) {
+    const std::vector<std::size_t> indexes = getIndexes(polygon.points.size());
+
+    const bool onBorder = std::any_of(
+        indexes.begin(),
+        indexes.end(),
+        [&point, &polygon](const std::size_t i) {
+            const Point& a = polygon.points[i];
+            const Point& b = polygon.points[(i + 1) % polygon.points.size()];
+
+            return onSegment(point, a, b);
+        }
+    );
+
+    if (onBorder) {
+        return true;
+    }
+
+    return std::accumulate(
+        indexes.begin(),
+        indexes.end(),
+        false,
+        [&point, &polygon](const bool inside, const std::size_t i) {
+            const Point& a = polygon.points[i];
+            const Point& b = polygon.points[(i + 1) % polygon.points.size()];
+
+            const bool crosses =
+                ((a.y > point.y) != (b.y > point.y)) &&
+                (
+                    point.x < static_cast<double>(b.x - a.x)
+                    * static_cast<double>(point.y - a.y)
+                    / static_cast<double>(b.y - a.y)
+                    + a.x
+                );
+
+            return crosses ? !inside : inside;
+        }
+    );
+}
+
 long long cross(const Point& a, const Point& b, const Point& c) {
     return static_cast<long long>(b.x - a.x) * (c.y - a.y)
          - static_cast<long long>(b.y - a.y) * (c.x - a.x);
@@ -135,20 +177,30 @@ bool segmentsIntersect(const Point& a, const Point& b, const Point& c, const Poi
 }
 
 bool polygonsIntersect(const Polygon& lhs, const Polygon& rhs) {
-    return std::any_of(
-        lhs.points.begin(),
-        lhs.points.end(),
-        [&lhs, &rhs](const Point& a) {
-            const Point& b = getNextPoint(lhs, a);
+    const std::vector<std::size_t> lhsIndexes = getIndexes(lhs.points.size());
+    const std::vector<std::size_t> rhsIndexes = getIndexes(rhs.points.size());
+
+    const bool edgesIntersect = std::any_of(
+        lhsIndexes.begin(),
+        lhsIndexes.end(),
+        [&lhs, &rhs, &rhsIndexes](const std::size_t i) {
+            const Point& a = lhs.points[i];
+            const Point& b = lhs.points[(i + 1) % lhs.points.size()];
 
             return std::any_of(
-                rhs.points.begin(),
-                rhs.points.end(),
-                [&rhs, &a, &b](const Point& c) {
-                    const Point& d = getNextPoint(rhs, c);
+                rhsIndexes.begin(),
+                rhsIndexes.end(),
+                [&rhs, &a, &b](const std::size_t j) {
+                    const Point& c = rhs.points[j];
+                    const Point& d = rhs.points[(j + 1) % rhs.points.size()];
+
                     return segmentsIntersect(a, b, c, d);
                 }
             );
         }
     );
+
+    return edgesIntersect
+        || pointInPolygon(lhs.points.front(), rhs)
+        || pointInPolygon(rhs.points.front(), lhs);
 }

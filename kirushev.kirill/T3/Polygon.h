@@ -32,10 +32,11 @@ std::istream& operator>>(std::istream&, Polygon&);
 std::ostream& operator<<(std::ostream&, const Polygon&);
 
 void printPolygons(const std::vector<Polygon>& polygons);
-bool polygonsIntersect(const Polygon&, const Polygon&);
+std::vector<std::size_t> getIndexes(std::size_t);
+bool pointInPolygon(const Point&, const Polygon&);
 long long cross(const Point&, const Point&, const Point&);
 bool onSegment(const Point&, const Point&, const Point&);
-const Point& getNextPoint(const Polygon&, const Point&);
 bool segmentsIntersect(const Point&, const Point&, const Point&, const Point&);
+bool polygonsIntersect(const Polygon&, const Polygon&);
 
 #endif //POLYGON_H
