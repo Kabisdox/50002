@@ -437,9 +437,9 @@ bool rect(const Polygon poly)
     return false;
 }
 
-int main(int, char* argv[])
+int main(int argc, char* argv[])
 {
-    if (!argv[1])
+    if (!argv[1] || argc !- 2)
     {
         std::cout << "FILENAME REQUIRED";
         return 1;
@@ -568,19 +568,25 @@ int main(int, char* argv[])
             if (command.num_ == true)
             {
                 n = command.n_;
-                if (v.size() == 0)
-                {
-                    std::cin.clear();
-                    std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
-                    if (std::cin.eof())
-                        break;
-                    std::cout << "<INVALID COMMAND>" << '\n';
-                }
             }
             if (!command.vv_)
+            {
+                if ((command.exp == "AREA MEAN" || command.exp.find("MAX") == 0 | command.exp.find("MIN") == 0) && v.empty())
+                {
+                    std::cout << "<INVALID COMMAND>\n";
+                    continue;
+                }
                 std::cout << std::fixed << std::setprecision(1) << table.find(command.exp)->second() << '\n';
+            }
             else
+            {
+                if ((command.exp == "AREA MEAN" || command.exp.find("MAX") == 0 | command.exp.find("MIN") == 0) && v.empty())
+                {
+                    std::cout << "<INVALID COMMAND>\n";
+                    continue;
+                }
                 std::cout << table.find(command.exp)->second() << '\n';
+            }
         }
     }
 }
