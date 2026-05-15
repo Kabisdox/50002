@@ -585,7 +585,7 @@ int main(int argc, char* argv[])
                     std::cout << "<INVALID COMMAND>\n";
                     continue;
                 }
-                std::cout << static_cast<int>(table.find(command.exp))->second() << '\n';
+                std::cout << static_cast<int>(table.find(command.exp)->second()) << '\n';
             }
         }
     }
