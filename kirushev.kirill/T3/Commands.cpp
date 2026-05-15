@@ -94,11 +94,13 @@ void min(const std::vector<Polygon>& polygons, const std::string& name, std::ost
                 ));
         os << std::fixed << std::setprecision(1) << getArea(*currentElement) << '\n';
     } else if (name == "VERTEXES") {
-        const auto currentElement = std::min_element(polygons.begin(), polygons.end(),
-            std::bind(std::less<>{},
-                std::bind(&std::vector<Point>::size, std::bind(&Polygon::points, _1)),
-                std::bind(&std::vector<Point>::size, std::bind(&Polygon::points, _2))
-                ));
+        const auto currentElement = std::min_element(
+            polygons.begin(),
+            polygons.end(),
+            [](const Polygon& lhs, const Polygon& rhs) {
+                return lhs.points.size() < rhs.points.size();
+            }
+        );
         os << currentElement->points.size() << '\n';
     } else {
         throw std::invalid_argument("");
@@ -123,11 +125,13 @@ void max(const std::vector<Polygon>& polygons, const std::string& name, std::ost
         os << std::fixed << std::setprecision(1) << getArea(*currentElement) << '\n';
     }
     else if (name == "VERTEXES") {
-        const auto currentElement = std::max_element(polygons.begin(), polygons.end(),
-            std::bind(std::less<>{},
-                std::bind(&std::vector< Point >::size, std::bind(&Polygon::points, _1)),
-                std::bind(&std::vector< Point >::size, std::bind(&Polygon::points, _2))
-                ));
+        const auto currentElement = std::min_element(
+            polygons.begin(),
+            polygons.end(),
+            [](const Polygon& lhs, const Polygon& rhs) {
+                return lhs.points.size() > rhs.points.size();
+            }
+        );
         os << currentElement->points.size() << '\n';
     }
     else {
