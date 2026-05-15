@@ -27,7 +27,7 @@ struct Point
     {
         return !(*this == p);
     }
-    bool operator<(const Point& p) const 
+    bool operator<(const Point& p) const
     {
         return x < p.x || (x == p.x && y < p.y);
     }
@@ -379,7 +379,7 @@ bool same(Polygon same11, Polygon same22)
     {
         if (same1.points[i] == same2.points[i])
         {
-            if (same1.points[i].x - same2.points[i].x != n) 
+            if (same1.points[i].x - same2.points[i].x != n)
                 return false;
         }
         else
@@ -395,9 +395,9 @@ int dist(const Point& a, const Point& b)
     return x*x + y*y;
 }
 
-bool rect(const Polygon poly) 
+bool rect(const Polygon poly)
 {
-    if (poly.points.size() != 4) 
+    if (poly.points.size() != 4)
         return false;
     std::vector<int> allDist;
     for (std::size_t i{0}; i < 4; ++i)
@@ -455,84 +455,84 @@ int main(int argc, char* argv[])
     std::unordered_map<std::string, std::function<float()>> table;
     table.insert(std::pair<std::string, std::function<float()>>("AREA EVEN", [&v](){return static_cast<float>(std::accumulate
                 (
-                    v.begin(), 
-                    v.end(), 
-                    0.0, 
+                    v.begin(),
+                    v.end(),
+                    0.0,
                     [](double acc, const Polygon& p){return acc + ((p.points.size()%2 == 0) ? area(p) : 0.0);}
                 ));}));
     table.insert(std::pair<std::string, std::function<float()>>("AREA ODD", [&v](){return static_cast<float>(std::accumulate
                 (
-                    v.begin(), 
-                    v.end(), 
-                    0.0, 
+                    v.begin(),
+                    v.end(),
+                    0.0,
                     [](double acc, const Polygon& p){return acc + ((p.points.size()%2 != 0) ? area(p) : 0.0);}
                 ));}));
     table.insert(std::pair<std::string, std::function<float()>>("AREA MEAN", [&v](){return static_cast<float>(std::accumulate
                 (
-                    v.begin(), 
-                    v.end(), 
-                    0.0, 
+                    v.begin(),
+                    v.end(),
+                    0.0,
                     [](double acc, const Polygon& p){return acc + area(p);}
                 )/v.size());}));
     table.insert(std::pair<std::string, std::function<float()>>("AREA num", [&v, &n](){return static_cast<float>(std::accumulate
                 (
-                    v.begin(), 
-                    v.end(), 
-                    0.0, 
+                    v.begin(),
+                    v.end(),
+                    0.0,
                     [&n](double acc, const Polygon& p){return acc + ((p.points.size()%n == 0) ? area(p) : 0.0);}
                 ));}));
     table.insert(std::pair<std::string, std::function<float()>>("MAX AREA", [&v](){return static_cast<float>(area(*std::max_element
                 (
-                    v.begin(), 
-                    v.end(), 
+                    v.begin(),
+                    v.end(),
                     [](const Polygon& p, const Polygon& pp){return area(p) < area(pp);}
                 )));}));
     table.insert(std::pair<std::string, std::function<float()>>("MAX VERTEXES", [&v](){return static_cast<float>(std::max_element
                 (
-                    v.begin(), 
-                    v.end(), 
+                    v.begin(),
+                    v.end(),
                     [](const Polygon& p, const Polygon& pp){return p.points.size() < pp.points.size();}
                 )->points.size());}));
     table.insert(std::pair<std::string, std::function<float()>>("MIN AREA", [&v](){return static_cast<float>(area(*std::min_element
                 (
-                    v.begin(), 
-                    v.end(), 
+                    v.begin(),
+                    v.end(),
                     [](const Polygon& p, const Polygon& pp){return area(p) < area(pp);}
                 )));}));
     table.insert(std::pair<std::string, std::function<float()>>("MIN VERTEXES", [&v](){return static_cast<float>(std::min_element
                 (
-                    v.begin(), 
-                    v.end(), 
+                    v.begin(),
+                    v.end(),
                     [](const Polygon& p, const Polygon& pp){return p.points.size() < pp.points.size();}
                 )->points.size());}));
     table.insert(std::pair<std::string, std::function<float()>>("COUNT EVEN", [&v](){return static_cast<float>(std::count_if
                 (
-                    v.begin(), 
-                    v.end(), 
+                    v.begin(),
+                    v.end(),
                     [](const Polygon& p){return p.points.size()%2 == 0;}
                 ));}));
     table.insert(std::pair<std::string, std::function<float()>>("COUNT ODD", [&v](){return static_cast<float>(std::count_if
                 (
-                    v.begin(), 
-                    v.end(), 
+                    v.begin(),
+                    v.end(),
                     [](const Polygon& p){return p.points.size()%2 != 0;}
                 ));}));
     table.insert(std::pair<std::string, std::function<float()>>("COUNT num", [&v, &n](){return static_cast<float>(std::count_if
                 (
-                    v.begin(), 
-                    v.end(), 
+                    v.begin(),
+                    v.end(),
                     [&n](const Polygon& p){return p.points.size()%n == 0;}
                 ));}));
     table.insert(std::pair<std::string, std::function<float()>>("SAME", [&v, &ppp](){return static_cast<float>(std::count_if
                 (
-                    v.begin(), 
-                    v.end(), 
+                    v.begin(),
+                    v.end(),
                     [&ppp](const Polygon& p) {return same(p,ppp);}
                 ));}));
     table.insert(std::pair<std::string, std::function<float()>>("RECTS", [&v](){return static_cast<float>(std::count_if
                 (
-                    v.begin(), 
-                    v.end(), 
+                    v.begin(),
+                    v.end(),
                     [](const Polygon& p) {return rect(p);}
                 ));}));
     while (!std::cin.eof())
