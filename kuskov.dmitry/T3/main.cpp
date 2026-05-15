@@ -64,6 +64,7 @@ struct cmdIO
     Polygon ppp_;
     bool poly_;
     bool num_;
+    bool vv_;
 };
 
 std::istream& operator>>(std::istream& in, LabelIO& dest)
@@ -221,6 +222,8 @@ std::istream& operator>>(std::istream& in, cmdIO& dest)
             input.n_ = o;
             input.exp = cmd.exp + " " + "num";
             input.num_ = true;
+            if (cmd.exp == "COUNT")
+                input.vv_ = true;
         }
         else
         {
@@ -232,6 +235,8 @@ std::istream& operator>>(std::istream& in, cmdIO& dest)
                 return in;
             }
             input.exp = cmd.exp + " " + cmd2.exp;
+            if (cmd.exp == "COUNT")
+                input.vv_ = true;
         }
     }
     else if(cmd.exp == "MIN" || cmd.exp == "MAX")
@@ -244,6 +249,8 @@ std::istream& operator>>(std::istream& in, cmdIO& dest)
             return in;
         }
         input.exp = cmd.exp + " " + cmd2.exp;
+        if (cmd2.exp == "VERTEXES1")
+            input.vv_ = true;
     }
     else if(cmd.exp == "SAME")
     {
@@ -255,6 +262,7 @@ std::istream& operator>>(std::istream& in, cmdIO& dest)
         }
         input.exp = cmd.exp;
         input.poly_ = true;
+        input.vv_ = true;
     }
     else if(cmd.exp == "RECTS")
     {
@@ -264,6 +272,7 @@ std::istream& operator>>(std::istream& in, cmdIO& dest)
             return in;
         }
         input.exp = cmd.exp;
+        input.vv_ = true;
     }
     else
     {
@@ -474,7 +483,7 @@ int main(int, char* argv[])
                     v.begin(),
                     v.end(),
                     0.0,
-                    [&n](double acc, const Polygon& p){return acc + ((p.points.size()%n == 0) ? area(p) : 0.0);}
+                    [&n](double acc, const Polygon& p){return acc + ((p.points.size() == n) ? area(p) : 0.0);}
                 ));}));
     table.insert(std::pair<std::string, std::function<float()>>("MAX AREA", [&v](){return static_cast<float>(area(*std::max_element
                 (
@@ -516,7 +525,7 @@ int main(int, char* argv[])
                 (
                     v.begin(),
                     v.end(),
-                    [&n](const Polygon& p){return p.points.size()%n == 0;}
+                    [&n](const Polygon& p){return p.points.size() == n;}
                 ));}));
     table.insert(std::pair<std::string, std::function<float()>>("SAME", [&v, &ppp](){return static_cast<float>(std::count_if
                 (
@@ -540,7 +549,7 @@ int main(int, char* argv[])
             std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
             if (std::cin.eof())
                 break;
-            std::cout << "INVALID COMMAND" << '\n';
+            std::cout << "<INVALID COMMAND>" << '\n';
         }
         else
         {
@@ -558,6 +567,9 @@ int main(int, char* argv[])
                     std::cout << "<INVALID COMMAND>" << '\n';
                 }
             }
+            if (!command.vv_)
+                std::cout << std::fixed << std::setprecision(1) << table.find(command.exp)->second() << '\n';
+            else
                 std::cout << table.find(command.exp)->second() << '\n';
         }
     }
