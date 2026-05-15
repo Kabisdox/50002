@@ -443,11 +443,6 @@ int main(int, char* argv[])
                 ifs.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
             }
         }
-        for (std::size_t i{0}; i < v.size(); ++i)
-        {
-            std::cout << v[i];
-            std::cout << '\n';
-        }
     }
     ifs.close();
     int n{0};
