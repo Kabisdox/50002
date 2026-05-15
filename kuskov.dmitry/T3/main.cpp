@@ -418,7 +418,7 @@ bool rect(const Polygon poly)
     return false;
 }
 
-int main(int argc, char* argv[])
+int main(int, char* argv[])
 {
     if (!argv[1])
     {
