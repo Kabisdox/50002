@@ -454,7 +454,7 @@ int main(int, char* argv[])
         }
     }
     ifs.close();
-    int n{0};
+    unsigned int n{0};
     Polygon ppp;
     std::unordered_map<std::string, std::function<float()>> table;
     table.insert(std::pair<std::string, std::function<float()>>("AREA EVEN", [&v](){return static_cast<float>(std::accumulate
