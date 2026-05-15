@@ -560,10 +560,10 @@ int main(int, char* argv[])
                     std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
                     if (std::cin.eof())
                         break;
-                    std::cout << "INVALID COMMAND" << '\n';
+                    std::cout << "<INVALID COMMAND>" << '\n';
                 }
             }
-            std::cout << std::fixed << std::setprecision(1) << table.find(command.exp)->second() << '\n';
+                std::cout << table.find(command.exp)->second() << '\n';
         }
     }
 }
