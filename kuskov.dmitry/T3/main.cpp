@@ -219,7 +219,7 @@ std::istream& operator>>(std::istream& in, cmdIO& dest)
         {
             int o{0};
             in >> o;
-            if (!in)
+            if (!in || (cmd.exp == "COUNT" && o < 3))
             {
                 in.setstate(std::ios_base::failbit);
                 return in;
@@ -585,7 +585,7 @@ int main(int argc, char* argv[])
                     std::cout << "<INVALID COMMAND>\n";
                     continue;
                 }
-                std::cout << table.find(command.exp)->second() << '\n';
+                std::cout << static_cast<int>(table.find(command.exp))->second() << '\n';
             }
         }
     }
