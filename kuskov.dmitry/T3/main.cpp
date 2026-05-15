@@ -439,7 +439,7 @@ bool rect(const Polygon poly)
 
 int main(int argc, char* argv[])
 {
-    if (!argv[1] || argc !- 2)
+    if (!argv[1] || argc != 2)
     {
         std::cout << "FILENAME REQUIRED";
         return 1;
@@ -571,7 +571,7 @@ int main(int argc, char* argv[])
             }
             if (!command.vv_)
             {
-                if ((command.exp == "AREA MEAN" || command.exp.find("MAX") == 0 | command.exp.find("MIN") == 0) && v.empty())
+                if ((command.exp == "AREA MEAN" || command.exp.find("MAX") == 0 || command.exp.find("MIN") == 0) && v.empty())
                 {
                     std::cout << "<INVALID COMMAND>\n";
                     continue;
@@ -580,7 +580,7 @@ int main(int argc, char* argv[])
             }
             else
             {
-                if ((command.exp == "AREA MEAN" || command.exp.find("MAX") == 0 | command.exp.find("MIN") == 0) && v.empty())
+                if ((command.exp == "AREA MEAN" || command.exp.find("MAX") == 0 || command.exp.find("MIN") == 0) && v.empty())
                 {
                     std::cout << "<INVALID COMMAND>\n";
                     continue;
