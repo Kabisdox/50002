@@ -129,6 +129,11 @@ std::istream& operator>>(std::istream& in, Polygon& dest)
     Polygon input;
     std::size_t numPoint{0};
     in >> numPoint;
+    if (numPoint < 3)
+    {
+        in.setstate(std::ios_base::failbit);
+        return in;
+    }
     if (in.get() != ' ')
     {
         in.setstate(std::ios_base::failbit);
@@ -219,6 +224,11 @@ std::istream& operator>>(std::istream& in, cmdIO& dest)
                 in.setstate(std::ios_base::failbit);
                 return in;
             }
+            if (cmd.exp == "AREA" && o < 3)
+            {
+                in.setstate(std::ios_base::failbit);
+                return in;
+            }
             input.n_ = o;
             input.exp = cmd.exp + " " + "num";
             input.num_ = true;
@@ -249,7 +259,7 @@ std::istream& operator>>(std::istream& in, cmdIO& dest)
             return in;
         }
         input.exp = cmd.exp + " " + cmd2.exp;
-        if (cmd2.exp == "VERTEXES1")
+        if (cmd2.exp == "VERTEXES")
             input.vv_ = true;
     }
     else if(cmd.exp == "SAME")
@@ -558,7 +568,7 @@ int main(int, char* argv[])
             if (command.num_ == true)
             {
                 n = command.n_;
-                if (n == 0)
+                if (v.size() == 0)
                 {
                     std::cin.clear();
                     std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
