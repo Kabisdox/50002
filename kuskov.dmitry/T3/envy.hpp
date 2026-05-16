@@ -69,7 +69,8 @@ float area(Polygon poly)
 }
 
 //AREA
-auto AREA = [](const std::vector<Polygon>& v, std::function<double(double, const Polygon&)> parameter){return static_cast<float>(std::accumulate
+auto AREA = [](const std::vector<Polygon>& v, std::function<double(double, const Polygon&)> parameter)
+{return static_cast<float>(std::accumulate
 (
     v.begin(),
     v.end(),
@@ -82,14 +83,16 @@ auto aODD = [](double acc, const Polygon& p){return acc + ((p.points.size()%2 !=
 auto aMEAN = [](double acc, const Polygon& p){return acc + area(p);};
 
 //MAX/MIN
-auto MAX = [](const std::vector<Polygon>& v, std::function<bool(const Polygon&, const Polygon&)> parameter){return std::max_element
+auto MAX = [](const std::vector<Polygon>& v, std::function<bool(const Polygon&, const Polygon&)> parameter)
+{return std::max_element
 (
     v.begin(),
     v.end(),
     parameter
 );};
 
-auto MIN = [](const std::vector<Polygon>& v, std::function<bool(const Polygon&, const Polygon&)> parameter){return std::min_element
+auto MIN = [](const std::vector<Polygon>& v, std::function<bool(const Polygon&, const Polygon&)> parameter)
+{return std::min_element
 (
     v.begin(),
     v.end(),
@@ -100,7 +103,8 @@ auto mAREA = [](const Polygon& p, const Polygon& pp){return area(p) < area(pp);}
 auto mVERTEXES = [](const Polygon& p, const Polygon& pp){return p.points.size() < pp.points.size();};
 
 //COUNT
-auto COUNT = [](const std::vector<Polygon>& v, std::function<bool(const Polygon&)> parameter){return static_cast<float>(std::count_if
+auto COUNT = [](const std::vector<Polygon>& v, std::function<bool(const Polygon&)> parameter)
+{return static_cast<float>(std::count_if
 (
     v.begin(),
     v.end(),
