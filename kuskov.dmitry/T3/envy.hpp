@@ -125,7 +125,7 @@ bool same(Polygon same11, Polygon same22)
         return false;
     else
         n = same1.points[0].x - same2.points[0].x;
-    if (!std::equal(same1.points.begin(), same1.points.end(), same2.points.begin(), 
+    if (!std::equal(same1.points.begin(), same1.points.end(), same2.points.begin(),
                 [&n](const Point& p, const Point& pp){return p.equalN(pp, n);}))
         return false;
     return true;
@@ -144,10 +144,10 @@ bool rect(const Polygon poly)
         return false;
     std::vector<int> allDist(6);
     int idx = 0;
-    std::generate(allDist.begin(), allDist.end(), [&, i = 0, j = 1]() mutable 
+    std::generate(allDist.begin(), allDist.end(), [&, i = 0, j = 1]() mutable
     {
         int d = dist(poly.points[i], poly.points[j]);
-        if (++j == 4) 
+        if (++j == 4)
             { ++i; j = i + 1; }
         return d;
     });
