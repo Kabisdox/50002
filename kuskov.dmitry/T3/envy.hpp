@@ -1,5 +1,17 @@
 #ifndef ENVY_HPP
 #define ENVY_HPP
+#include <iostream>
+#include <iomanip>
+#include <string>
+#include <fstream>
+#include <vector>
+#include <iterator>
+#include <limits>
+#include <unordered_map>
+#include <functional>
+#include <numeric>
+#include <algorithm>
+#include <cmath>
 
 struct Point
 {
@@ -147,12 +159,14 @@ bool rect(const Polygon poly)
     if (poly.points.size() != 4)
         return false;
     std::vector<int> allDist(6);
-    int idx = 0;
     std::generate(allDist.begin(), allDist.end(), [&, i = 0, j = 1]() mutable
     {
         int d = dist(poly.points[i], poly.points[j]);
         if (++j == 4)
-            { ++i; j = i + 1; }
+        {
+            ++i;
+            j = i + 1;
+        }
         return d;
     });
     std::sort(allDist.begin(), allDist.end());
