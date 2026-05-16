@@ -359,7 +359,7 @@ int main(int argc, char* argv[])
     table.insert(std::pair<std::string, type>("AREA ODD",
                 [](const std::vector<Polygon>& v, unsigned int, Polygon){return AREA(v, aODD);}));
     table.insert(std::pair<std::string, type>("AREA MEAN",
-                [](const std::vector<Polygon>& v, unsigned int, Polygon){return AREA(v, aMEAN);}));
+                [](const std::vector<Polygon>& v, unsigned int, Polygon){return AREA(v, aMEAN)/v.size();}));
     table.insert(std::pair<std::string, type>("AREA num",
                 [](const std::vector<Polygon>& v, unsigned int m, Polygon){return AREA(v,
                     [&m](double acc, const Polygon& p){return acc + ((p.points.size() == m) ? area(p) : 0.0);});}));
@@ -368,7 +368,7 @@ int main(int argc, char* argv[])
     table.insert(std::pair<std::string, type>("MIN AREA",
                 [](const std::vector<Polygon>& v, unsigned int, Polygon){return area(*MIN(v, mAREA));}));
     table.insert(std::pair<std::string, type>("MAX VERTEXES",
-                [](const std::vector<Polygon>& v, unsigned int, Polygon){return MAX(v, mAREA)->points.size();}));
+                [](const std::vector<Polygon>& v, unsigned int, Polygon){return MAX(v, mVERTEXES)->points.size();}));
     table.insert(std::pair<std::string, type>("MIN VERTEXES",
                 [](const std::vector<Polygon>& v, unsigned int, Polygon){return MIN(v, mAREA)->points.size();}));
     table.insert(std::pair<std::string, type>("COUNT EVEN",

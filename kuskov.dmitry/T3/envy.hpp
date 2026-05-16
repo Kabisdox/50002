@@ -27,7 +27,7 @@ struct Point
 
     bool equalN(const Point p, const int n) const
     {
-        if (p.x - x == p.y - y && p.x - x == n)
+        if ((p.x - x == p.y - y) && p.x - x == n)
             return true;
         return false;
     }
@@ -140,7 +140,7 @@ bool same(Polygon same11, Polygon same22)
     if (!same1.points[0].equal(same2.points[0]))
         return false;
     else
-        n = same1.points[0].x - same2.points[0].x;
+        n = same2.points[0].x - same1.points[0].x;
     if (!std::equal(same1.points.begin(), same1.points.end(), same2.points.begin(),
                 [&n](const Point& p, const Point& pp){return p.equalN(pp, n);}))
         return false;
