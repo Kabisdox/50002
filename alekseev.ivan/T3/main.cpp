@@ -1,6 +1,5 @@
 #include <algorithm>
 #include <cmath>
-#include <cctype>
 #include <fstream>
 #include <functional>
 #include <iomanip>
@@ -9,7 +8,6 @@
 #include <numeric>
 #include <sstream>
 #include <string>
-#include <tuple>
 #include <vector>
 
 struct Point
@@ -25,72 +23,43 @@ struct Polygon
 
 struct Line
 {
-    std::string text;
+    std::string value;
 };
 
-struct ParsedPolygon
-{
-    Polygon polygon;
-    bool isCorrect;
-};
-
-bool operator==(const Point& left, const Point& right)
-{
-    return left.x == right.x && left.y == right.y;
-}
-
-bool operator==(const Polygon& left, const Polygon& right)
-{
-    return left.points == right.points;
-}
-
-bool readExact(std::istream& in, char expected)
-{
-    char symbol = 0;
-    if (in.get(symbol) && symbol == expected)
-    {
-        return true;
-    }
-    in.setstate(std::ios::failbit);
-    return false;
-}
-
-bool isDigitChar(char symbol)
-{
-    return std::isdigit(static_cast<unsigned char>(symbol)) != 0;
-}
-
-bool isNextDigit(std::istream& in)
-{
-    const int next = in.peek();
-    return next != std::char_traits< char >::eof() &&
-        isDigitChar(static_cast<char>(next));
-}
+const char* INVALID_COMMAND = "<INVALID COMMAND>";
 
 std::istream& operator>>(std::istream& in, Line& line)
 {
-    if (!std::getline(in, line.text))
-    {
-        in.setstate(std::ios::failbit);
-    }
+    std::getline(in, line.value);
     return in;
+}
+
+bool operator==(const Point& lhs, const Point& rhs)
+{
+    return lhs.x == rhs.x && lhs.y == rhs.y;
+}
+
+bool operator<(const Point& lhs, const Point& rhs)
+{
+    return lhs.x < rhs.x || (lhs.x == rhs.x && lhs.y < rhs.y);
+}
+
+bool operator==(const Polygon& lhs, const Polygon& rhs)
+{
+    return lhs.points == rhs.points;
 }
 
 std::istream& operator>>(std::istream& in, Point& point)
 {
-    const std::istream::fmtflags flags = in.flags();
-    in >> std::noskipws;
-
+    char left = 0;
+    char semicolon = 0;
+    char right = 0;
     int x = 0;
     int y = 0;
-    const bool isCorrect =
-        readExact(in, '(') &&
-        (in >> x) &&
-        readExact(in, ';') &&
-        (in >> y) &&
-        readExact(in, ')');
 
-    if (isCorrect)
+    if ((in >> left) && left == '(' && (in >> x) &&
+        (in >> semicolon) && semicolon == ';' &&
+        (in >> y) && (in >> right) && right == ')')
     {
         point.x = x;
         point.y = y;
@@ -99,125 +68,103 @@ std::istream& operator>>(std::istream& in, Point& point)
     {
         in.setstate(std::ios::failbit);
     }
-
-    in.flags(flags);
     return in;
 }
 
-struct PointReader
+bool readPoints(std::istream& in, std::vector< Point >& points, std::size_t count)
 {
-    explicit PointReader(std::istream& input) :
-        input_(&input),
-        isCorrect_(true)
+    if (count == 0)
     {
+        return true;
     }
-
-    Point operator()()
-    {
-        Point point{ 0, 0 };
-        if (!readExact(*input_, ' ') || !(*input_ >> point))
-        {
-            isCorrect_ = false;
-        }
-        return point;
-    }
-
-    bool isCorrect() const
-    {
-        return isCorrect_;
-    }
-
-private:
-    std::istream* input_;
-    bool isCorrect_;
-};
-
-std::istream& operator>>(std::istream& in, Polygon& polygon)
-{
-    const std::istream::fmtflags flags = in.flags();
-    in >> std::noskipws;
-
-    std::size_t count = 0;
-    if (!isNextDigit(in) || !(in >> count) || count < 3)
-    {
-        in.setstate(std::ios::failbit);
-        in.flags(flags);
-        return in;
-    }
-
-    std::vector< Point > points(count);
-    PointReader reader(in);
-    std::generate(points.begin(), points.end(), std::ref(reader));
-
-    if (!reader.isCorrect())
-    {
-        in.setstate(std::ios::failbit);
-        in.flags(flags);
-        return in;
-    }
-
-    polygon.points = points;
-    in.flags(flags);
-    return in;
-}
-
-bool isOnlySpacesToEnd(std::istream& in)
-{
-    in >> std::ws;
-    return in.eof();
-}
-
-bool readPolygonFromLine(const std::string& line, Polygon& polygon)
-{
-    std::istringstream input(line);
-    Polygon temp;
-    if (!(input >> temp) || !isOnlySpacesToEnd(input))
+    Point point;
+    if (!(in >> point))
     {
         return false;
     }
+    points.push_back(point);
+    return readPoints(in, points, count - 1);
+}
+
+bool readPolygon(std::istream& in, Polygon& polygon)
+{
+    long long count = 0;
+    if (!(in >> count) || count < 3)
+    {
+        return false;
+    }
+
+    Polygon temp;
+    temp.points.reserve(static_cast<std::size_t>(count));
+    if (!readPoints(in, temp.points, static_cast<std::size_t>(count)))
+    {
+        return false;
+    }
+
+    in >> std::ws;
+    if (!in.eof())
+    {
+        return false;
+    }
+
     polygon = temp;
     return true;
 }
 
-ParsedPolygon parsePolygonLine(const Line& line)
+bool readPolygon(const std::string& text, Polygon& polygon)
 {
-    ParsedPolygon result{ Polygon(), false };
-    result.isCorrect = readPolygonFromLine(line.text, result.polygon);
-    return result;
+    std::istringstream in(text);
+    return readPolygon(in, polygon);
 }
 
-bool isParsedPolygonInvalid(const ParsedPolygon& polygon)
+bool isPolygonLine(const Line& line)
 {
-    return !polygon.isCorrect;
+    Polygon polygon;
+    return readPolygon(line.value, polygon);
 }
 
-Polygon getParsedPolygon(const ParsedPolygon& polygon)
+Polygon makePolygon(const Line& line)
 {
-    return polygon.polygon;
+    Polygon polygon;
+    readPolygon(line.value, polygon);
+    return polygon;
 }
 
-std::vector< Polygon > readPolygons(std::istream& input)
+long long getCross(const Point& lhs, const Point& rhs)
 {
-    std::vector< Line > lines{
-        std::istream_iterator< Line >(input),
-        std::istream_iterator< Line >()
-    };
+    return static_cast<long long>(lhs.x) * rhs.y - static_cast<long long>(lhs.y) * rhs.x;
+}
 
-    std::vector< ParsedPolygon > parsed(lines.size());
-    std::transform(lines.cbegin(), lines.cend(), parsed.begin(), parsePolygonLine);
+long long getAbsLongLong(long long value)
+{
+    return value < 0 ? -value : value;
+}
 
-    parsed.erase(
-        std::remove_if(parsed.begin(), parsed.end(), isParsedPolygonInvalid),
-        parsed.end());
+double getArea(const Polygon& polygon)
+{
+    if (polygon.points.size() < 3)
+    {
+        return 0.0;
+    }
 
-    std::vector< Polygon > polygons(parsed.size());
-    std::transform(
-        parsed.cbegin(),
-        parsed.cend(),
-        polygons.begin(),
-        getParsedPolygon);
+    std::vector< Point > shifted(polygon.points.size());
+    std::rotate_copy(
+        polygon.points.cbegin(),
+        std::next(polygon.points.cbegin()),
+        polygon.points.cend(),
+        shifted.begin()
+    );
 
-    return polygons;
+    long long doubleArea = std::inner_product(
+        polygon.points.cbegin(),
+        polygon.points.cend(),
+        shifted.cbegin(),
+        0LL,
+        std::plus< long long >(),
+        getCross
+    );
+
+    return getAbsLongLong(doubleArea) / 2.0;
 }
 
 std::size_t getVertexCount(const Polygon& polygon)
@@ -225,445 +172,325 @@ std::size_t getVertexCount(const Polygon& polygon)
     return polygon.points.size();
 }
 
-int getX(const Point& point)
+bool isEvenVertexCount(const Polygon& polygon)
 {
-    return point.x;
+    return getVertexCount(polygon) % 2 == 0;
 }
 
-int getY(const Point& point)
+bool isOddVertexCount(const Polygon& polygon)
 {
-    return point.y;
+    return getVertexCount(polygon) % 2 != 0;
 }
 
-double getCrossProduct(const Point& left, const Point& right)
+double addArea(double result, const Polygon& polygon)
 {
-    return static_cast<double>(left.x) * right.y -
-        static_cast<double>(left.y) * right.x;
+    return result + getArea(polygon);
 }
 
-double getArea(const Polygon& polygon)
+template< typename Predicate >
+double getAreaSumIf(const std::vector< Polygon >& polygons, Predicate predicate)
 {
-    const std::vector< Point >& points = polygon.points;
-
-    double sum = std::inner_product(
-        points.cbegin(),
-        std::prev(points.cend()),
-        std::next(points.cbegin()),
-        0.0,
-        std::plus< double >(),
-        getCrossProduct);
-
-    sum += getCrossProduct(points.back(), points.front());
-    return std::abs(sum) / 2.0;
+    std::vector< Polygon > filtered;
+    std::copy_if(polygons.cbegin(), polygons.cend(), std::back_inserter(filtered), predicate);
+    return std::accumulate(filtered.cbegin(), filtered.cend(), 0.0, addArea);
 }
 
-double addArea(double sum, const Polygon& polygon)
+double getAreaSum(const std::vector< Polygon >& polygons)
 {
-    return sum + getArea(polygon);
+    return std::accumulate(polygons.cbegin(), polygons.cend(), 0.0, addArea);
 }
 
-double addAreaIfEven(double sum, const Polygon& polygon, bool needEven)
+std::string formatDouble(double value)
 {
-    const bool isEven = getVertexCount(polygon) % 2 == 0;
-    return (isEven == needEven) ? (sum + getArea(polygon)) : sum;
+    std::ostringstream out;
+    out << std::fixed << std::setprecision(1) << value;
+    return out.str();
 }
 
-double addAreaIfVertexCount(
-    double sum,
-    const Polygon& polygon,
-    std::size_t count)
+bool isFinished(std::istream& in)
 {
-    return (getVertexCount(polygon) == count) ? (sum + getArea(polygon)) : sum;
+    in >> std::ws;
+    return in.eof();
 }
 
-bool readSize(const std::string& text, std::size_t& value)
+bool readVertexNumber(const std::string& text, std::size_t& value)
 {
-    if (text.empty() ||
-        !std::all_of(text.cbegin(), text.cend(), isDigitChar))
+    long long number = 0;
+    char extra = 0;
+    std::istringstream in(text);
+    if (!(in >> number) || (in >> extra) || number < 3)
     {
         return false;
     }
-
-    std::istringstream input(text);
-    input >> value;
-    return !input.fail();
+    value = static_cast<std::size_t>(number);
+    return true;
 }
 
-std::string toString(double value)
+Point subtractPoint(const Point& point, const Point& base)
 {
-    std::ostringstream output;
-    output << std::fixed << std::setprecision(1) << value;
-    return output.str();
+    Point result;
+    result.x = point.x - base.x;
+    result.y = point.y - base.y;
+    return result;
 }
 
-std::string toString(std::size_t value)
-{
-    std::ostringstream output;
-    output << value;
-    return output.str();
-}
-
-bool isPointLess(const Point& left, const Point& right)
-{
-    return std::tie(left.x, left.y) < std::tie(right.x, right.y);
-}
-
-Point shiftPoint(const Point& point, int minX, int minY)
-{
-    return Point{ point.x - minX, point.y - minY };
-}
-
-std::vector< Point > getNormalPoints(const Polygon& polygon)
+std::vector< Point > getNormalizedPoints(const Polygon& polygon)
 {
     using namespace std::placeholders;
 
     std::vector< Point > result(polygon.points.size());
-
-    const auto minX = std::min_element(
-        polygon.points.cbegin(),
-        polygon.points.cend(),
-        std::bind(
-            std::less< int >(),
-            std::bind(getX, _1),
-            std::bind(getX, _2)));
-
-    const auto minY = std::min_element(
-        polygon.points.cbegin(),
-        polygon.points.cend(),
-        std::bind(
-            std::less< int >(),
-            std::bind(getY, _1),
-            std::bind(getY, _2)));
-
+    Point base = *std::min_element(polygon.points.cbegin(), polygon.points.cend());
     std::transform(
         polygon.points.cbegin(),
         polygon.points.cend(),
         result.begin(),
-        std::bind(shiftPoint, _1, minX->x, minY->y));
-
-    std::sort(result.begin(), result.end(), isPointLess);
+        std::bind(subtractPoint, _1, base)
+    );
+    std::sort(result.begin(), result.end());
     return result;
 }
 
-bool isSameByMove(const Polygon& left, const Polygon& right)
+bool isSameByMoving(const Polygon& sample, const Polygon& polygon)
 {
-    if (getVertexCount(left) != getVertexCount(right))
-    {
-        return false;
-    }
-    return getNormalPoints(left) == getNormalPoints(right);
+    return getVertexCount(sample) == getVertexCount(polygon) &&
+        getNormalizedPoints(sample) == getNormalizedPoints(polygon);
 }
 
-bool makeAreaResult(
-    const std::vector< Polygon >& polygons,
-    std::istream& input,
-    std::string& result)
+bool hasLessAreaThan(const Polygon& sample, const Polygon& polygon)
+{
+    return getArea(polygon) < getArea(sample);
+}
+
+std::string processArea(const std::vector< Polygon >& polygons, std::istream& in)
 {
     using namespace std::placeholders;
 
     std::string parameter;
-    if (!(input >> parameter) || !isOnlySpacesToEnd(input))
+    if (!(in >> parameter) || !isFinished(in))
     {
-        return false;
-    }
-
-    if (parameter == "EVEN")
-    {
-        result = toString(std::accumulate(
-            polygons.cbegin(),
-            polygons.cend(),
-            0.0,
-            std::bind(addAreaIfEven, _1, _2, true)));
-        return true;
+        return INVALID_COMMAND;
     }
 
     if (parameter == "ODD")
     {
-        result = toString(std::accumulate(
-            polygons.cbegin(),
-            polygons.cend(),
-            0.0,
-            std::bind(addAreaIfEven, _1, _2, false)));
-        return true;
+        return formatDouble(getAreaSumIf(polygons, isOddVertexCount));
     }
-
+    if (parameter == "EVEN")
+    {
+        return formatDouble(getAreaSumIf(polygons, isEvenVertexCount));
+    }
     if (parameter == "MEAN")
     {
         if (polygons.empty())
         {
-            return false;
+            return INVALID_COMMAND;
         }
-
-        const double sum =
-            std::accumulate(polygons.cbegin(), polygons.cend(), 0.0, addArea);
-        result = toString(sum / polygons.size());
-        return true;
+        return formatDouble(getAreaSum(polygons) / polygons.size());
     }
 
-    std::size_t count = 0;
-    if (!readSize(parameter, count) || count < 3)
+    std::size_t vertexCount = 0;
+    if (!readVertexNumber(parameter, vertexCount))
     {
-        return false;
+        return INVALID_COMMAND;
     }
 
-    result = toString(std::accumulate(
-        polygons.cbegin(),
-        polygons.cend(),
-        0.0,
-        std::bind(addAreaIfVertexCount, _1, _2, count)));
-
-    return true;
+    return formatDouble(getAreaSumIf(
+        polygons,
+        std::bind(std::equal_to< std::size_t >(), std::bind(getVertexCount, _1), vertexCount)
+    ));
 }
 
-bool makeMaxResult(
-    const std::vector< Polygon >& polygons,
-    std::istream& input,
-    std::string& result)
+std::string processMax(const std::vector< Polygon >& polygons, std::istream& in)
 {
     using namespace std::placeholders;
 
     std::string parameter;
-    if (!(input >> parameter) || !isOnlySpacesToEnd(input) || polygons.empty())
+    if (!(in >> parameter) || !isFinished(in) || polygons.empty())
     {
-        return false;
+        return INVALID_COMMAND;
     }
 
     if (parameter == "AREA")
     {
-        const auto iter = std::max_element(
+        std::vector< Polygon >::const_iterator it = std::max_element(
             polygons.cbegin(),
             polygons.cend(),
-            std::bind(
-                std::less< double >(),
-                std::bind(getArea, _1),
-                std::bind(getArea, _2)));
-
-        result = toString(getArea(*iter));
-        return true;
+            std::bind(std::less< double >(), std::bind(getArea, _1), std::bind(getArea, _2))
+        );
+        return formatDouble(getArea(*it));
     }
-
     if (parameter == "VERTEXES")
     {
-        const auto iter = std::max_element(
+        std::vector< Polygon >::const_iterator it = std::max_element(
             polygons.cbegin(),
             polygons.cend(),
-            std::bind(
-                std::less< std::size_t >(),
-                std::bind(getVertexCount, _1),
-                std::bind(getVertexCount, _2)));
-
-        result = toString(getVertexCount(*iter));
-        return true;
+            std::bind(std::less< std::size_t >(), std::bind(getVertexCount, _1), std::bind(getVertexCount, _2))
+        );
+        return std::to_string(getVertexCount(*it));
     }
 
-    return false;
+    return INVALID_COMMAND;
 }
 
-bool makeMinResult(
-    const std::vector< Polygon >& polygons,
-    std::istream& input,
-    std::string& result)
+std::string processMin(const std::vector< Polygon >& polygons, std::istream& in)
 {
     using namespace std::placeholders;
 
     std::string parameter;
-    if (!(input >> parameter) || !isOnlySpacesToEnd(input) || polygons.empty())
+    if (!(in >> parameter) || !isFinished(in) || polygons.empty())
     {
-        return false;
+        return INVALID_COMMAND;
     }
 
     if (parameter == "AREA")
     {
-        const auto iter = std::min_element(
+        std::vector< Polygon >::const_iterator it = std::min_element(
             polygons.cbegin(),
             polygons.cend(),
-            std::bind(
-                std::less< double >(),
-                std::bind(getArea, _1),
-                std::bind(getArea, _2)));
-
-        result = toString(getArea(*iter));
-        return true;
+            std::bind(std::less< double >(), std::bind(getArea, _1), std::bind(getArea, _2))
+        );
+        return formatDouble(getArea(*it));
     }
-
     if (parameter == "VERTEXES")
     {
-        const auto iter = std::min_element(
+        std::vector< Polygon >::const_iterator it = std::min_element(
             polygons.cbegin(),
             polygons.cend(),
-            std::bind(
-                std::less< std::size_t >(),
-                std::bind(getVertexCount, _1),
-                std::bind(getVertexCount, _2)));
-
-        result = toString(getVertexCount(*iter));
-        return true;
+            std::bind(std::less< std::size_t >(), std::bind(getVertexCount, _1), std::bind(getVertexCount, _2))
+        );
+        return std::to_string(getVertexCount(*it));
     }
 
-    return false;
+    return INVALID_COMMAND;
 }
 
-bool makeCountResult(
-    const std::vector< Polygon >& polygons,
-    std::istream& input,
-    std::string& result)
+std::string processCount(const std::vector< Polygon >& polygons, std::istream& in)
 {
     using namespace std::placeholders;
 
     std::string parameter;
-    if (!(input >> parameter) || !isOnlySpacesToEnd(input))
+    if (!(in >> parameter) || !isFinished(in))
     {
-        return false;
-    }
-
-    if (parameter == "EVEN")
-    {
-        result = toString(static_cast<std::size_t>(std::count_if(
-            polygons.cbegin(),
-            polygons.cend(),
-            std::bind(
-                std::equal_to< std::size_t >(),
-                std::bind(
-                    std::modulus< std::size_t >(),
-                    std::bind(getVertexCount, _1),
-                    2),
-                0))));
-        return true;
+        return INVALID_COMMAND;
     }
 
     if (parameter == "ODD")
     {
-        result = toString(static_cast<std::size_t>(std::count_if(
-            polygons.cbegin(),
-            polygons.cend(),
-            std::bind(
-                std::equal_to< std::size_t >(),
-                std::bind(
-                    std::modulus< std::size_t >(),
-                    std::bind(getVertexCount, _1),
-                    2),
-                1))));
-        return true;
+        return std::to_string(std::count_if(polygons.cbegin(), polygons.cend(), isOddVertexCount));
     }
-
-    std::size_t count = 0;
-    if (!readSize(parameter, count) || count < 3)
+    if (parameter == "EVEN")
     {
-        return false;
+        return std::to_string(std::count_if(polygons.cbegin(), polygons.cend(), isEvenVertexCount));
     }
 
-    result = toString(static_cast<std::size_t>(std::count_if(
+    std::size_t vertexCount = 0;
+    if (!readVertexNumber(parameter, vertexCount))
+    {
+        return INVALID_COMMAND;
+    }
+
+    return std::to_string(std::count_if(
         polygons.cbegin(),
         polygons.cend(),
-        std::bind(
-            std::equal_to< std::size_t >(),
-            std::bind(getVertexCount, _1),
-            count))));
-
-    return true;
+        std::bind(std::equal_to< std::size_t >(), std::bind(getVertexCount, _1), vertexCount)
+    ));
 }
 
-bool makeLessAreaResult(
-    const std::vector< Polygon >& polygons,
-    std::istream& input,
-    std::string& result)
+std::string processLessArea(const std::vector< Polygon >& polygons, std::istream& in)
 {
     using namespace std::placeholders;
 
-    Polygon polygon;
-    if (!readExact(input, ' ') || !(input >> polygon) || !isOnlySpacesToEnd(input))
+    Polygon sample;
+    if (!readPolygon(in, sample))
     {
-        return false;
+        return INVALID_COMMAND;
     }
 
-    const double area = getArea(polygon);
-    result = toString(static_cast<std::size_t>(std::count_if(
+    return std::to_string(std::count_if(
         polygons.cbegin(),
         polygons.cend(),
-        std::bind(std::less< double >(), std::bind(getArea, _1), area))));
-
-    return true;
+        std::bind(hasLessAreaThan, std::cref(sample), _1)
+    ));
 }
 
-bool makeSameResult(
-    const std::vector< Polygon >& polygons,
-    std::istream& input,
-    std::string& result)
+std::string processSame(const std::vector< Polygon >& polygons, std::istream& in)
 {
     using namespace std::placeholders;
 
-    Polygon polygon;
-    if (!readExact(input, ' ') || !(input >> polygon) || !isOnlySpacesToEnd(input))
+    Polygon sample;
+    if (!readPolygon(in, sample))
     {
-        return false;
+        return INVALID_COMMAND;
     }
 
-    result = toString(static_cast<std::size_t>(std::count_if(
+    return std::to_string(std::count_if(
         polygons.cbegin(),
         polygons.cend(),
-        std::bind(isSameByMove, _1, polygon))));
-
-    return true;
+        std::bind(isSameByMoving, std::cref(sample), _1)
+    ));
 }
 
-std::string executeCommand(
-    const Line& line,
-    const std::vector< Polygon >& polygons)
+std::string processCommand(const std::vector< Polygon >& polygons, const Line& line)
 {
-    std::istringstream input(line.text);
+    std::istringstream in(line.value);
     std::string command;
-    std::string result;
-    bool isCorrect = false;
-
-    if (!(input >> command))
+    if (!(in >> command))
     {
-        return "<INVALID COMMAND>";
+        return INVALID_COMMAND;
     }
 
     if (command == "AREA")
     {
-        isCorrect = makeAreaResult(polygons, input, result);
+        return processArea(polygons, in);
     }
-    else if (command == "MAX")
+    if (command == "MAX")
     {
-        isCorrect = makeMaxResult(polygons, input, result);
+        return processMax(polygons, in);
     }
-    else if (command == "MIN")
+    if (command == "MIN")
     {
-        isCorrect = makeMinResult(polygons, input, result);
+        return processMin(polygons, in);
     }
-    else if (command == "COUNT")
+    if (command == "COUNT")
     {
-        isCorrect = makeCountResult(polygons, input, result);
+        return processCount(polygons, in);
     }
-    else if (command == "LESSAREA")
+    if (command == "LESSAREA")
     {
-        isCorrect = makeLessAreaResult(polygons, input, result);
+        return processLessArea(polygons, in);
     }
-    else if (command == "SAME")
+    if (command == "SAME")
     {
-        isCorrect = makeSameResult(polygons, input, result);
+        return processSame(polygons, in);
     }
 
-    return isCorrect ? result : "<INVALID COMMAND>";
+    return INVALID_COMMAND;
 }
 
-void processCommands(const std::vector< Polygon >& polygons)
+std::vector< Polygon > readPolygons(std::istream& in)
 {
-    using namespace std::placeholders;
+    std::vector< Line > lines;
+    std::vector< Line > goodLines;
+    std::vector< Polygon > polygons;
 
-    std::transform(
-        std::istream_iterator< Line >(std::cin),
+    std::copy(
+        std::istream_iterator< Line >(in),
         std::istream_iterator< Line >(),
-        std::ostream_iterator< std::string >(std::cout, "\n"),
-        std::bind(executeCommand, _1, std::cref(polygons)));
+        std::back_inserter(lines)
+    );
+    std::copy_if(lines.cbegin(), lines.cend(), std::back_inserter(goodLines), isPolygonLine);
+    std::transform(goodLines.cbegin(), goodLines.cend(), std::back_inserter(polygons), makePolygon);
+
+    return polygons;
 }
 
 int main(int argc, char* argv[])
 {
-    if (argc < 2)
+    using namespace std::placeholders;
+
+    if (argc != 2)
     {
-        std::cerr << "Error: filename is not set\n";
+        std::cerr << "Error: filename is not specified\n";
         return 1;
     }
 
@@ -674,8 +501,14 @@ int main(int argc, char* argv[])
         return 1;
     }
 
-    const std::vector< Polygon > polygons = readPolygons(input);
-    processCommands(polygons);
+    std::vector< Polygon > polygons = readPolygons(input);
+
+    std::transform(
+        std::istream_iterator< Line >(std::cin),
+        std::istream_iterator< Line >(),
+        std::ostream_iterator< std::string >(std::cout, "\n"),
+        std::bind(processCommand, std::cref(polygons), _1)
+    );
 
     return 0;
 }
