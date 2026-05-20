@@ -15,7 +15,7 @@ std::istream& operator>>(std::istream& in, Polygon& polygon) {
     }
     polygon.points.clear();
     std::copy_n(std::istream_iterator<Point>(in), numberDots, std::back_inserter(polygon.points));
-    if (polygon.points.size() > numberDots) {
+    if (polygon.points.size() != numberDots) {
         in.setstate(std::ios_base::failbit);
         return in;
     }

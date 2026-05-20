@@ -66,20 +66,32 @@ int main(int count, char* filename[])
             else if (command == "RMECHO") {
                 Polygon polygon;
                 std::cin >> polygon;
+                if (!(std::cin >> polygon)) {
+                    throw std::logic_error("<INVALID COMMAND>");
+                }
                 rmecho(polygons, polygon, std::cout);
             }
             else if (command == "SAME") {
                 Polygon polygon;
                 std::cin >> polygon;
+                if (!(std::cin >> polygon)) {
+                    throw std::logic_error("<INVALID COMMAND>");
+                }
                 same(polygons, polygon, std::cout);
             }
             else {
-                throw std::invalid_argument("ERROR: Unknown command.");
+                throw std::invalid_argument("<INVALID COMMAND>");
             }
         }
         catch (const std::exception& e) {
-            std::cout << e.what();
-            return 1;
+            std::cout << "<INVALID COMMAND>\n";
+
+            std::cin.clear();
+
+            std::cin.ignore(
+                std::numeric_limits<std::streamsize>::max(),
+                '\n'
+            );
         }
     }
     return 0;
