@@ -1,11 +1,9 @@
 #include "commands.h"
 #include <algorithm>
-#include <algorithm>
 #include <numeric>
 #include <iterator>
 #include <functional>
 #include <cmath>
-
 static double get_area(const Polygon& poly)
 {
     const auto& pts = poly.points;
@@ -20,12 +18,10 @@ static double get_area(const Polygon& poly)
         }
     ) + (pts.back().x * pts.front().y - pts.back().y * pts.front().x)) / 2.0;
 }
-
 static std::size_t get_size(const Polygon& p)
 {
     return p.points.size();
 }
-
 static std::vector<Point> normalize(const Polygon& poly)
 {
     std::vector<Point> pts = poly.points;
@@ -52,16 +48,13 @@ static std::vector<Point> normalize(const Polygon& poly)
 
     return pts;
 }
-
 static bool is_same(const Polygon& a, const Polygon& b)
 {
     if (a.points.size() != b.points.size()) {
         return false;
     }
-
     return normalize(a) == normalize(b);
 }
-
 void area(std::vector<Polygon> polygons, std::string param, std::ostream& out)
 {
     if (param == "EVEN") {
@@ -98,7 +91,6 @@ void area(std::vector<Polygon> polygons, std::string param, std::ostream& out)
         out << sum << "\n";
     }
 }
-
 void max(std::vector<Polygon> polygons, std::string param, std::ostream& out)
 {
     if (polygons.empty()) throw std::logic_error("<INVALID COMMAND>");
@@ -119,7 +111,6 @@ void max(std::vector<Polygon> polygons, std::string param, std::ostream& out)
     }
     else throw std::logic_error("<INVALID COMMAND>");
 }
-
 void min(std::vector<Polygon> polygons, std::string param, std::ostream& out)
 {
     if (polygons.empty()) throw std::logic_error("<INVALID COMMAND>");
@@ -140,7 +131,6 @@ void min(std::vector<Polygon> polygons, std::string param, std::ostream& out)
     }
     else throw std::logic_error("<INVALID COMMAND>");
 }
-
 void ccount(std::vector<Polygon> polygons, std::string param, std::ostream& out)
 {
     if (param == "EVEN") {
@@ -165,11 +155,10 @@ void ccount(std::vector<Polygon> polygons, std::string param, std::ostream& out)
             }) << "\n";
     }
 }
-
-void rmecho(std::vector<Polygon> polygons, const Polygon& polygon, std::ostream& out)
+void rmecho(std::vector<Polygon>& polygons, const Polygon& polygon, std::ostream& out)
 {
     Polygon previous;
-    auto end = std::remove_if(polygons.begin(), polygons.end(), 
+    auto end = std::remove_if(polygons.begin(), polygons.end(),
         [&](Polygon c) {
             if (previous == c && c == polygon) {
                 return true;
@@ -181,7 +170,6 @@ void rmecho(std::vector<Polygon> polygons, const Polygon& polygon, std::ostream&
         });
     out << std::distance(end, polygons.end()) << "\n";
 }
-
 void same(std::vector<Polygon> polygons,
     const Polygon& polygon,
     std::ostream& out)
@@ -192,20 +180,6 @@ void same(std::vector<Polygon> polygons,
         [&polygon](const Polygon& p)
         {
             return is_same(p, polygon);
-        }
-    ) << "\n";
-}
-
-void same(const std::vector<Polygon>& polygons,
-    const Polygon& polygon,
-    std::ostream& out)
-{
-    out << std::count_if(
-        polygons.begin(),
-        polygons.end(),
-        [&polygon](const Polygon& current)
-        {
-            return is_same(current, polygon);
         }
     ) << "\n";
 }
