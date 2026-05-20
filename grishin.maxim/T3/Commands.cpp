@@ -18,10 +18,6 @@ static double get_area(const Polygon& poly)
         }
     ) + (pts.back().x * pts.front().y - pts.back().y * pts.front().x)) / 2.0;
 }
-static std::size_t get_size(const Polygon& p)
-{
-    return p.points.size();
-}
 static std::vector<Point> normalize(const Polygon& poly)
 {
     std::vector<Point> pts = poly.points;
@@ -80,11 +76,11 @@ void area(std::vector<Polygon> polygons, std::string param, std::ostream& out)
         out << sum / polygons.size() << "\n";
     }
     else {
-        int n = std::stoi(param);
+        size_t n = std::stoi(param);
         if (n < 3) throw std::logic_error("<INVALID COMMAND>");
 
         double sum = std::accumulate(polygons.begin(), polygons.end(), 0.0,
-            [n](double acc, const Polygon& p) {
+            [&n](double acc, const Polygon& p) {
                 return (p.points.size() == n) ? acc + get_area(p) : acc;
             });
 
@@ -146,11 +142,11 @@ void ccount(std::vector<Polygon> polygons, std::string param, std::ostream& out)
             }) << "\n";
     }
     else {
-        int n = std::stoi(param);
+        size_t n = std::stoi(param);
         if (n < 3) throw std::logic_error("<INVALID COMMAND>");
 
         out << std::count_if(polygons.begin(), polygons.end(),
-            [n](const Polygon& p) {
+            [&n](const Polygon& p) {
                 return p.points.size() == n;
             }) << "\n";
     }
