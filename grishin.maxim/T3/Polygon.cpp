@@ -1,11 +1,13 @@
 #include <iostream>
+#include <algorithm>
+#include <iterator>
 #include "Polygon.h"
 std::istream& operator>>(std::istream& in, Polygon& polygon) {
     std::istream::sentry sentry(in);
     if (!sentry) {
         return in;
     }
-    int numberDots;
+    size_t numberDots;
     in >> numberDots;
     if ((!in) || (numberDots < 3)) {
         in.setstate(std::ios_base::failbit);

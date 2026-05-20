@@ -3,6 +3,8 @@
 #include <fstream>
 #include <vector>
 #include <string>
+#include <iterator>
+#include <limits>
 #include "Polygon.h"
 #include "Commands.h"
 
