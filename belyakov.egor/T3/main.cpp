@@ -34,6 +34,7 @@ int main(int count, char** file)
         if (inputf.fail() && !inputf.eof())
         {
             inputf.clear();
+            // ignore не нужен — operator>>(Polygon) сам потребляет строку
         }
     }
 
@@ -74,7 +75,7 @@ int main(int count, char** file)
         catch (...) {
             std::cout << "<INVALID COMMAND>" << std::endl;
             std::cin.clear();
-            if (std::cin.peek() != '\n' && std::cin.peek() != EOF) {
+            if (cmd != "LESSAREA" && cmd != "MAXSEQ") {
                 std::cin.ignore((std::numeric_limits<std::streamsize>::max)(), '\n');
             }
         }
