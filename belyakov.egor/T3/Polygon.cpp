@@ -31,21 +31,31 @@ std::istream& operator>>(std::istream& in, Polygon& dest)
         return in;
     }
     dest.points.clear();
+
     size_t size = 0;
     in >> size;
+
+    bool sizeOk = !in.fail();
+    if (!sizeOk) {
+        in.clear();
+    }
+
     std::string str;
     std::getline(in, str, '\n');
-    std::istringstream input(str);
-    if (!input || size < 3) {
+
+    if (!sizeOk || size < 3) {
         in.setstate(std::ios::failbit);
         return in;
     }
+
+    std::istringstream input(str);
     std::vector<Point> temp{};
     std::copy(
         std::istream_iterator<Point>(input),
         std::istream_iterator<Point>(),
         std::back_inserter(temp)
     );
+
     if (temp.size() == size && temp.size() >= 3) {
         dest.points = temp;
     }

@@ -22,6 +22,7 @@ int main(int count, char** file)
         std::cout << "ERROR: fail open file";
         return 1;
     }
+
     std::vector<Polygon> polygons;
     while (!inputf.eof())
     {
@@ -33,7 +34,6 @@ int main(int count, char** file)
         if (inputf.fail() && !inputf.eof())
         {
             inputf.clear();
-            inputf.ignore((std::numeric_limits<std::streamsize>::max)(), '\n');
         }
     }
 
@@ -74,7 +74,9 @@ int main(int count, char** file)
         catch (...) {
             std::cout << "<INVALID COMMAND>" << std::endl;
             std::cin.clear();
-            std::cin.ignore((std::numeric_limits<std::streamsize>::max)(), '\n');
+            if (std::cin.peek() != '\n' && std::cin.peek() != EOF) {
+                std::cin.ignore((std::numeric_limits<std::streamsize>::max)(), '\n');
+            }
         }
     }
     return 0;
