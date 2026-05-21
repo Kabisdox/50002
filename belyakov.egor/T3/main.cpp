@@ -34,7 +34,6 @@ int main(int count, char** file)
         if (inputf.fail() && !inputf.eof())
         {
             inputf.clear();
-            // ignore не нужен — operator>>(Polygon) сам потребляет строку
         }
     }
 
