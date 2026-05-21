@@ -2,22 +2,36 @@
 #include <algorithm>
 #include <iterator>
 #include "Polygon.h"
-std::istream& operator>>(std::istream& in, Polygon& polygon) {
+std::istream& operator>>(std::istream& in, Polygon& polygon)
+{
     std::istream::sentry sentry(in);
     if (!sentry) {
         return in;
     }
     size_t numberDots;
     in >> numberDots;
-    if ((!in) || (numberDots < 3)) {
-        in.setstate(std::ios_base::failbit);
+    if (!in || numberDots < 3) {
+        in.setstate(std::ios::failbit);
         return in;
     }
     polygon.points.clear();
-    std::copy_n(std::istream_iterator<Point>(in), numberDots, std::back_inserter(polygon.points));
-    if (polygon.points.size() != numberDots) {
-        in.setstate(std::ios_base::failbit);
-        return in;
+    try {
+        std::generate_n(
+            std::back_inserter(polygon.points),
+            numberDots,
+            [&in]()
+            {
+                Point p;
+                if (!(in >> p)) {
+                    throw std::ios_base::failure("Point read error");
+                }
+                return p;
+            }
+        );
+    }
+    catch (...) {
+        polygon.points.clear();
+        in.setstate(std::ios::failbit);
     }
     return in;
 }
