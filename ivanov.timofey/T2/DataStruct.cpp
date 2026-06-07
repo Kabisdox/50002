@@ -14,7 +14,8 @@ namespace datastruct
         fill_(s.fill()),
         precision_(s.precision()),
         fmt_(s.flags())
-    {}
+    {
+    }
 
     iofmtguard::~iofmtguard()
     {
@@ -189,14 +190,17 @@ namespace datastruct
         char c1, c2;
         if (!in.get(c1) || c1 != '(' || !in.get(c2) || c2 != ':')
         {
+            in.clear();
+            in.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
             in.setstate(std::ios::failbit);
             return in;
         }
 
         DataStruct temp{};
         bool f1 = false, f2 = false, f3 = false;
+        bool parseError = false;
 
-        while (!(f1 && f2 && f3))
+        while (!(f1 && f2 && f3) && !parseError)
         {
             in >> std::ws;
 
@@ -213,58 +217,55 @@ namespace datastruct
             std::string key;
             if (!(in >> key))
             {
-                in.setstate(std::ios::failbit);
-                return in;
+                parseError = true;
+                break;
             }
-
-            in >> std::ws;
 
             if (key == "key1" && !f1)
             {
-                if (!(in >> UllLitIO{ temp.key1 }))
-                {
-                    in.setstate(std::ios::failbit);
-                    return in;
-                }
-                f1 = true;
+                if (in >> UllLitIO{ temp.key1 })
+                    f1 = true;
+                else
+                    parseError = true;
             }
             else if (key == "key2" && !f2)
             {
-                if (!(in >> CmpLspIO{ temp.key2 }))
-                {
-                    in.setstate(std::ios::failbit);
-                    return in;
-                }
-                f2 = true;
+                if (in >> CmpLspIO{ temp.key2 })
+                    f2 = true;
+                else
+                    parseError = true;
             }
             else if (key == "key3" && !f3)
             {
-                if (!(in >> StringIO{ temp.key3 }))
-                {
-                    in.setstate(std::ios::failbit);
-                    return in;
-                }
-                f3 = true;
+                if (in >> StringIO{ temp.key3 })
+                    f3 = true;
+                else
+                    parseError = true;
             }
             else
             {
-                std::string tempString;
-                if (!(in >> tempString))
+                std::string dummy;
+                if (!(in >> dummy))
                 {
-                    in.setstate(std::ios::failbit);
-                    return in;
+                    parseError = true;
+                    break;
                 }
             }
         }
 
-        if (f1 && f2 && f3)
+        in.clear();
+        in.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+
+        if (f1 && f2 && f3 && !parseError)
         {
             dest = temp;
+            in.clear();
         }
         else
         {
             in.setstate(std::ios::failbit);
         }
+
         return in;
     }
 
@@ -278,8 +279,9 @@ namespace datastruct
 
         iofmtguard fmtguard(out);
 
-        out << "(:key1 " << src.key1 << "ULL";
-        out << ":key2 #c(" << std::fixed << std::setprecision(1) << src.key2.real() << " " << src.key2.imag() << ")";
+        out << "(:key1 " << src.key1 << "ull";
+        out << ":key2 #c(" << std::fixed << std::setprecision(1)
+            << src.key2.real() << " " << src.key2.imag() << ")";
         out << ":key3 \"" << src.key3 << "\":)";
 
         return out;
