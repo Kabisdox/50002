@@ -16,12 +16,6 @@ int main()
         std::back_inserter(data)
     );
 
-    if (data.empty())
-    {
-        std::cout << "Atleast one supported record type" << std::endl;
-        return 0;
-    }
-
     std::sort(data.begin(), data.end(), comparator);
 
     std::copy(
