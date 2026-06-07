@@ -183,10 +183,7 @@ namespace datastruct
     std::istream& operator>>(std::istream& in, DataStruct& dest)
     {
         std::istream::sentry sentry(in);
-        if (!sentry)
-        {
-            return in;
-        };
+        if (!sentry) return in;
 
         in >> std::ws;
 
@@ -253,12 +250,6 @@ namespace datastruct
                 }
             }
         }
-        in >> std::ws;
-        char c;
-        if (!in.get(c) || c != ')')
-        {
-            in.setstate(std::ios::failbit);
-        }
 
         if (f1 && f2 && f3 && !parseError)
         {
@@ -305,6 +296,6 @@ namespace datastruct
             return absA < absB;
         }
 
-        return a.key3.length() < b.key3.length();
+        return a.key3 < b.key3;
     }
 }
