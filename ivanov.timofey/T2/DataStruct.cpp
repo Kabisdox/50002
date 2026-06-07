@@ -183,15 +183,16 @@ namespace datastruct
     std::istream& operator>>(std::istream& in, DataStruct& dest)
     {
         std::istream::sentry sentry(in);
-        if (!sentry) return in;
+        if (!sentry) 
+        {
+            return in
+        };
 
         in >> std::ws;
 
         char c1, c2;
         if (!in.get(c1) || c1 != '(' || !in.get(c2) || c2 != ':')
         {
-            in.clear();
-            in.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
             in.setstate(std::ios::failbit);
             return in;
         }
@@ -252,14 +253,16 @@ namespace datastruct
                 }
             }
         }
-
-        in.clear();
-        in.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+        in >> std::ws;
+        char c;
+        if (!in.get(c) || c != ')')
+        {
+            in.setstate(std::ios::failbit);
+        }
 
         if (f1 && f2 && f3 && !parseError)
         {
             dest = temp;
-            in.clear();
         }
         else
         {
