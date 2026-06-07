@@ -1,20 +1,20 @@
 #include "DataStruct.h"
+#include <sstream>
 #include <iomanip>
 #include <cmath>
 #include <cctype>
-#include <algorithm>
-#include <sstream>
+#include <stdexcept>
+#include <limits>
 
-namespace nspace
+namespace datastruct
 {
-    iofmtguard::iofmtguard(std::basic_ios<char>& s) noexcept :
+    iofmtguard::iofmtguard(std::basic_ios<char>& s) :
         s_(s),
         width_(s.width()),
         fill_(s.fill()),
         precision_(s.precision()),
         fmt_(s.flags())
-    {
-    }
+    {}
 
     iofmtguard::~iofmtguard()
     {
@@ -50,6 +50,21 @@ namespace nspace
         return std::getline(in >> DelimiterIO{ '"' }, dest.ref, '"');
     }
 
+    std::istream& operator>>(std::istream& in, LabelIO&& dest)
+    {
+        std::istream::sentry sentry(in);
+        if (!sentry)
+        {
+            return in;
+        }
+        std::string data = "";
+        if ((in >> StringIO{ data }) && (data != dest.exp))
+        {
+            in.setstate(std::ios::failbit);
+        }
+        return in;
+    }
+
     std::istream& operator>>(std::istream& in, UllLitIO&& dest)
     {
         std::istream::sentry sentry(in);
@@ -61,9 +76,19 @@ namespace nspace
         std::string token;
         char c;
 
-        while (in.get(c) && std::isdigit(c))
+        in >> std::ws;
+
+        while (in.get(c))
         {
-            token += c;
+            if (std::isdigit(c) || std::isalpha(c))
+            {
+                token += c;
+            }
+            else
+            {
+                in.putback(c);
+                break;
+            }
         }
 
         if (token.empty())
@@ -72,35 +97,37 @@ namespace nspace
             return in;
         }
 
-        std::string suffix;
-        suffix += c;
-        if (in.get(c))
+        try
         {
-            suffix += c;
-        }
-        if (in.get(c))
-        {
-            suffix += c;
-        }
+            std::string numStr = token;
+            const std::string suffixes[] = { "ull", "ULL", "u11", "U11", "ll", "LL", "u", "U" };
 
-        std::string lowerSuffix = suffix;
-        std::transform(lowerSuffix.begin(), lowerSuffix.end(), lowerSuffix.begin(), ::tolower);
-
-        if (lowerSuffix == "ull")
-        {
-            try
+            for (const auto& suffix : suffixes)
             {
-                dest.ref = std::stoull(token);
-                return in;
+                if (numStr.length() > suffix.length() &&
+                    numStr.substr(numStr.length() - suffix.length()) == suffix)
+                {
+                    numStr = numStr.substr(0, numStr.length() - suffix.length());
+                    break;
+                }
             }
-            catch (const std::exception&)
+
+            for (char digit : numStr)
             {
-                in.setstate(std::ios::failbit);
-                return in;
+                if (!std::isdigit(digit))
+                {
+                    in.setstate(std::ios::failbit);
+                    return in;
+                }
             }
+
+            dest.ref = std::stoull(numStr);
+        }
+        catch (const std::exception&)
+        {
+            in.setstate(std::ios::failbit);
         }
 
-        in.setstate(std::ios::failbit);
         return in;
     }
 
@@ -112,80 +139,131 @@ namespace nspace
             return in;
         }
 
-        double real = 0.0;
-        double imag = 0.0;
+        char c;
+        in >> std::ws;
 
-        in >> DelimiterIO{ '#' } >> DelimiterIO{ 'c' } >> DelimiterIO{ '(' }
-        >> real >> imag >> DelimiterIO{ ')' };
-
-        dest.ref = std::complex<double>(real, imag);
-
-        if (!in)
+        if (!in.get(c) || c != '#' ||
+            !in.get(c) || c != 'c' ||
+            !in.get(c) || c != '(')
         {
             in.setstate(std::ios::failbit);
+            return in;
         }
+
+        double real = 0.0, imag = 0.0;
+        in >> std::ws;
+
+        if (!(in >> real))
+        {
+            in.setstate(std::ios::failbit);
+            return in;
+        }
+
+        in >> std::ws;
+
+        if (!(in >> imag))
+        {
+            in.setstate(std::ios::failbit);
+            return in;
+        }
+
+        in >> std::ws;
+
+        if (!in.get(c) || c != ')')
+        {
+            in.setstate(std::ios::failbit);
+            return in;
+        }
+
+        dest.ref = std::complex<double>(real, imag);
         return in;
     }
 
     std::istream& operator>>(std::istream& in, DataStruct& dest)
     {
         std::istream::sentry sentry(in);
-        if (!sentry)
+        if (!sentry) return in;
+
+        in >> std::ws;
+
+        char c1, c2;
+        if (!in.get(c1) || c1 != '(' || !in.get(c2) || c2 != ':')
         {
+            in.setstate(std::ios::failbit);
             return in;
         }
 
-        DataStruct input;
+        DataStruct temp{};
+        bool f1 = false, f2 = false, f3 = false;
+
+        while (!(f1 && f2 && f3))
         {
-            using sep = DelimiterIO;
-            using str = StringIO;
-            using ullLit = UllLitIO;
-            using cmpLsp = CmpLspIO;
+            in >> std::ws;
 
-            in >> sep{ '(' } >> sep{ ':' };
-
-            std::string iKey = "";
-            bool hasKey1 = false, hasKey2 = false, hasKey3 = false;
-
-            for (int i = 0; i < 3; i++)
+            if (in.peek() == ':')
             {
-                in >> iKey;
+                in.get();
+                if (in.peek() == ')')
+                {
+                    in.get();
+                    break;
+                }
+            }
 
-                if (iKey == "key1" && !hasKey1)
-                {
-                    in >> ullLit{ input.key1 };
-                    hasKey1 = true;
-                }
-                else if (iKey == "key2" && !hasKey2)
-                {
-                    in >> cmpLsp{ input.key2 };
-                    hasKey2 = true;
-                }
-                else if (iKey == "key3" && !hasKey3)
-                {
-                    in >> str{ input.key3 };
-                    hasKey3 = true;
-                }
-                else
+            std::string key;
+            if (!(in >> key))
+            {
+                in.setstate(std::ios::failbit);
+                return in;
+            }
+
+            in >> std::ws;
+
+            if (key == "key1" && !f1)
+            {
+                if (!(in >> UllLitIO{ temp.key1 }))
                 {
                     in.setstate(std::ios::failbit);
                     return in;
                 }
-
-                if (!in)
+                f1 = true;
+            }
+            else if (key == "key2" && !f2)
+            {
+                if (!(in >> CmpLspIO{ temp.key2 }))
                 {
+                    in.setstate(std::ios::failbit);
                     return in;
                 }
-
-                in >> sep{ ':' };
+                f2 = true;
             }
-
-            in >> sep{ ')' };
+            else if (key == "key3" && !f3)
+            {
+                if (!(in >> StringIO{ temp.key3 }))
+                {
+                    in.setstate(std::ios::failbit);
+                    return in;
+                }
+                f3 = true;
+            }
+            else
+            {
+                std::string dummy;
+                if (!(in >> dummy))
+                {
+                    in.setstate(std::ios::failbit);
+                    return in;
+                }
+            }
         }
 
-        if (in)
+        if (f1 && f2 && f3)
         {
-            dest = input;
+            dest = temp;
+        }
+        else
+        {
+            in.setstate(std::ios::failbit);
         }
         return in;
     }
@@ -200,29 +278,29 @@ namespace nspace
 
         iofmtguard fmtguard(out);
 
-        out << "(:key1 " << src.key1 << "ull"
-            << ":key2 " << std::fixed << std::setprecision(1)
-            << "#c(" << src.key2.real() << " " << src.key2.imag() << ")"
-            << ":key3 \"" << src.key3 << "\":)";
+        out << "(:key1 " << src.key1 << "ULL";
+        out << ":key2 #c(" << std::fixed << std::setprecision(1)
+            << src.key2.real() << " " << src.key2.imag() << ")";
+        out << ":key3 \"" << src.key3 << "\":)";
 
         return out;
     }
 
-    bool sortDataStruct(const DataStruct& first, const DataStruct& second)
+    bool comparator(const DataStruct& a, const DataStruct& b)
     {
-        if (first.key1 != second.key1)
+        if (a.key1 != b.key1)
         {
-            return first.key1 < second.key1;
+            return a.key1 < b.key1;
         }
 
-        double absFirst = std::abs(first.key2);
-        double absSecond = std::abs(second.key2);
+        double absA = std::abs(a.key2);
+        double absB = std::abs(b.key2);
 
-        if (std::abs(absFirst - absSecond) > 1e-10)
+        if (std::abs(absA - absB) > 1e-10)
         {
-            return absFirst < absSecond;
+            return absA < absB;
         }
 
-        return first.key3.length() < second.key3.length();
+        return a.key3.length() < b.key3.length();
     }
 }
