@@ -183,9 +183,9 @@ namespace datastruct
     std::istream& operator>>(std::istream& in, DataStruct& dest)
     {
         std::istream::sentry sentry(in);
-        if (!sentry) 
+        if (!sentry)
         {
-            return in
+            return in;
         };
 
         in >> std::ws;
