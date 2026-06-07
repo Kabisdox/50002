@@ -248,8 +248,8 @@ namespace datastruct
             }
             else
             {
-                std::string dummy;
-                if (!(in >> dummy))
+                std::string tempString;
+                if (!(in >> tempString))
                 {
                     in.setstate(std::ios::failbit);
                     return in;
@@ -279,8 +279,7 @@ namespace datastruct
         iofmtguard fmtguard(out);
 
         out << "(:key1 " << src.key1 << "ULL";
-        out << ":key2 #c(" << std::fixed << std::setprecision(1)
-            << src.key2.real() << " " << src.key2.imag() << ")";
+        out << ":key2 #c(" << std::fixed << std::setprecision(1) << src.key2.real() << " " << src.key2.imag() << ")";
         out << ":key3 \"" << src.key3 << "\":)";
 
         return out;
