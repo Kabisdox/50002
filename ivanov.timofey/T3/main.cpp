@@ -41,49 +41,65 @@ int main(int argc, char* argv[])
     std::string cmd;
     while (std::cin >> cmd)
     {
-        try
+        if (cmd == "AREA")
         {
-            if (cmd == "AREA")
+            std::string arg;
+            if (!(std::cin >> arg))
             {
-                std::string arg;
-                std::cin >> arg;
-                area(polygons, arg, std::cout);
+                std::cout << "<INVALID COMMAND>" << std::endl;
+                std::cin.clear();
+                std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+                continue;
             }
-            else if (cmd == "MAX")
-            {
-                std::string arg;
-                std::cin >> arg;
-                max(polygons, arg, std::cout);
-            }
-            else if (cmd == "MIN")
-            {
-                std::string arg;
-                std::cin >> arg;
-                min(polygons, arg, std::cout);
-            }
-            else if (cmd == "COUNT")
-            {
-                std::string arg;
-                std::cin >> arg;
-                count(polygons, arg, std::cout);
-            }
-            else if (cmd == "PERMS")
-            {
-                perms(polygons, std::cin, std::cout);
-            }
-            else if (cmd == "RIGHTSHAPES")
-            {
-                rightshapes(polygons, std::cout);
-            }
-            else
-            {
-                throw std::invalid_argument("");
-            }
+            area(polygons, arg, std::cout);
         }
-        catch (...)
+        else if (cmd == "MAX")
+        {
+            std::string arg;
+            if (!(std::cin >> arg))
+            {
+                std::cout << "<INVALID COMMAND>" << std::endl;
+                std::cin.clear();
+                std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+                continue;
+            }
+            max(polygons, arg, std::cout);
+        }
+        else if (cmd == "MIN")
+        {
+            std::string arg;
+            if (!(std::cin >> arg))
+            {
+                std::cout << "<INVALID COMMAND>" << std::endl;
+                std::cin.clear();
+                std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+                continue;
+            }
+            min(polygons, arg, std::cout);
+        }
+        else if (cmd == "COUNT")
+        {
+            std::string arg;
+            if (!(std::cin >> arg))
+            {
+                std::cout << "<INVALID COMMAND>" << std::endl;
+                std::cin.clear();
+                std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+                continue;
+            }
+            count(polygons, arg, std::cout);
+        }
+        else if (cmd == "PERMS")
+        {
+            perms(polygons, std::cin, std::cout);
+        }
+        else if (cmd == "RIGHTSHAPES")
+        {
+            rightshapes(polygons, std::cout);
+        }
+        else
         {
             std::cout << "<INVALID COMMAND>" << std::endl;
-            std::cin.clear();
             std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
         }
     }

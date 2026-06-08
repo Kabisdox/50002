@@ -9,14 +9,13 @@
 
 void area(const std::vector<Polygon>& polygons, const std::string& param, std::ostream& out)
 {
-    if (polygons.empty())
-    {
-        out << "<INVALID COMMAND>" << std::endl;
-        return;
-    }
-
     if (param == "MEAN")
     {
+        if (polygons.empty())
+        {
+            out << "<INVALID COMMAND>" << std::endl;
+            return;
+        }
         double sum = std::accumulate(polygons.begin(), polygons.end(), 0.0,
             [](double s, const Polygon& p) { return s + p.area(); });
         out << std::fixed << std::setprecision(1) << sum / polygons.size() << std::endl;
@@ -40,6 +39,11 @@ void area(const std::vector<Polygon>& polygons, const std::string& param, std::o
     else
     {
         size_t n = std::stoul(param);
+        if (n < 3)
+        {
+            out << "<INVALID COMMAND>" << std::endl;
+            return;
+        }
         double sum = std::accumulate(polygons.begin(), polygons.end(), 0.0,
             [n](double s, const Polygon& p) {
                 return s + ((p.points.size() == n) ? p.area() : 0.0);
@@ -115,6 +119,11 @@ void count(const std::vector<Polygon>& polygons, const std::string& param, std::
     else
     {
         size_t n = std::stoul(param);
+        if (n < 3)
+        {
+            out << "<INVALID COMMAND>" << std::endl;
+            return;
+        }
         out << std::count_if(polygons.begin(), polygons.end(),
             [n](const Polygon& p) { return p.points.size() == n; }) << std::endl;
     }
