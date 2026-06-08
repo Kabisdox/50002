@@ -5,7 +5,6 @@
 #include <numeric>
 #include <sstream>
 #include <string>
-#include <stdexcept> 
 
 std::istream& operator>>(std::istream& in, Point& point)
 {
