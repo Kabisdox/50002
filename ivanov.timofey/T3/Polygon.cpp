@@ -9,7 +9,11 @@
 
 std::istream& operator>>(std::istream& in, Point& point)
 {
-
+    std::istream::sentry sentry(in);
+    if (!sentry)
+    {
+        return in;
+    }
 
     char c1, c2, c3;
     if (!(in >> c1 && c1 == '('))
