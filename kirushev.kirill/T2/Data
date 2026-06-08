@@ -1,0 +1,12 @@
+Корректные примеры:
+
+(:key1 -10ll:key2 #c(1.0 -2.0):key3 "abc":)
+(:key2 #c(2.5 3.5):key3 "hello":key1 42LL:)
+(:key3 "with : inside":key1 0ll:key2 #c(0.0 0.0):)
+(:key1 -999LL:key3 "test":key2 #c(10.0 -10.0):)
+
+Некорректные примеры:
+(:key1 -10:key2 #c(1.0 -2.0):key3 "abc":)
+(:key1 -10ll:key2 #c(1.0):key3 "abc":)
+(:key1 -10ll:key2 #c(1.0 -2.0):key3 abc:)
+(:key1 -10ll:key2 #c(1.0 -2.0):key1 5ll:key3 "abc":)
